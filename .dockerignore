@@ -1,0 +1,27 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies
+node_modules
+frontend/node_modules
+env
+venv
+.venv
+__pycache__
+*.pyc
+*.pyo
+
+# IDE & OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Logs & temp
+*.log
+scratch/
+.tempmediaStorage/
+backend/__pycache__/
+ml/__pycache__/
+scripts/__pycache__/

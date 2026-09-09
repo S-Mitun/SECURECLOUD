@@ -1,0 +1,107 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "CPU Utilization",
+      "type": "gauge",
+      "targets": [{ "expr": "securecloud_cpu_utilization_percent", "legendFormat": "CPU %" }],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 100, "unit": "percent",
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 70 },
+            { "color": "red", "value": 85 }
+          ]}
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "title": "RAM Utilization",
+      "type": "gauge",
+      "targets": [{ "expr": "securecloud_memory_utilization_percent", "legendFormat": "RAM %" }],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 100, "unit": "percent",
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 75 },
+            { "color": "red", "value": 90 }
+          ]}
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "title": "Disk Storage Used",
+      "type": "gauge",
+      "targets": [{ "expr": "securecloud_disk_utilization_percent", "legendFormat": "Disk %" }],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 100, "unit": "percent",
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 80 },
+            { "color": "red", "value": 90 }
+          ]}
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "title": "Active Threat Detections",
+      "type": "stat",
+      "targets": [{ "expr": "securecloud_threats_malicious_total", "legendFormat": "Malicious Files" }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "blue", "value": null },
+            { "color": "red", "value": 1 }
+          ]}
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 5,
+      "title": "API Request Rate & Telemetry",
+      "type": "timeseries",
+      "targets": [{ "expr": "rate(securecloud_api_requests_total[1m])", "legendFormat": "Requests/sec" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 6,
+      "title": "Threat Scans & Malicious Alerts",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "securecloud_threat_scans_total", "legendFormat": "Total Scans" },
+        { "expr": "securecloud_threats_malicious_total", "legendFormat": "Malicious Quarantines" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["securecloud", "soc", "security", "telemetry"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "SecureCloud 2.0 - Security Operations Center & VM Monitor",
+  "version": 1
+}

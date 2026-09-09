@@ -1,0 +1,396 @@
+{
+  "timestamp": "2026-08-31T11:36:24.981885",
+  "version": "securecloud-threat-model-v1",
+  "selected_algorithm": "Random Forest",
+  "dataset": "security_dataset.csv",
+  "dataset_hash": "f864cd61512e855b2dc686895f6cc5beae0de962bb9484f1430afeee022418cc",
+  "total_rows": 12050,
+  "cleaned_rows": 12001,
+  "duplicates_removed": 49,
+  "class_distribution": {
+    "CLEAN": 9001,
+    "SUSPICIOUS": 1800,
+    "MALICIOUS": 1200
+  },
+  "leaderboard": [
+    {
+      "model": "Random Forest",
+      "accuracy": 100.0,
+      "f1": 100.0,
+      "malicious_recall": 100.0,
+      "suspicious_recall": 100.0,
+      "clean_recall": 100.0,
+      "roc_auc": 0.0,
+      "selection_score": 100.0,
+      "val_metrics": {
+        "accuracy": 100.0,
+        "precision": 100.0,
+        "recall": 100.0,
+        "f1_score": 100.0,
+        "f1_weighted": 100.0,
+        "malicious_recall": 100.0,
+        "suspicious_recall": 100.0,
+        "clean_recall": 100.0,
+        "roc_auc": 0.0,
+        "per_class": {
+          "CLEAN": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1": 100.0,
+            "support": 1350
+          },
+          "SUSPICIOUS": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1": 100.0,
+            "support": 270
+          },
+          "MALICIOUS": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1": 100.0,
+            "support": 180
+          }
+        },
+        "confusion_matrix": [
+          [
+            1350,
+            0,
+            0
+          ],
+          [
+            0,
+            270,
+            0
+          ],
+          [
+            0,
+            0,
+            180
+          ]
+        ],
+        "classes": [
+          "CLEAN",
+          "SUSPICIOUS",
+          "MALICIOUS"
+        ]
+      }
+    },
+    {
+      "model": "Logistic Regression",
+      "accuracy": 100.0,
+      "f1": 100.0,
+      "malicious_recall": 100.0,
+      "suspicious_recall": 100.0,
+      "clean_recall": 100.0,
+      "roc_auc": 0.0,
+      "selection_score": 100.0,
+      "val_metrics": {
+        "accuracy": 100.0,
+        "precision": 100.0,
+        "recall": 100.0,
+        "f1_score": 100.0,
+        "f1_weighted": 100.0,
+        "malicious_recall": 100.0,
+        "suspicious_recall": 100.0,
+        "clean_recall": 100.0,
+        "roc_auc": 0.0,
+        "per_class": {
+          "CLEAN": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1": 100.0,
+            "support": 1350
+          },
+          "SUSPICIOUS": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1": 100.0,
+            "support": 270
+          },
+          "MALICIOUS": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1": 100.0,
+            "support": 180
+          }
+        },
+        "confusion_matrix": [
+          [
+            1350,
+            0,
+            0
+          ],
+          [
+            0,
+            270,
+            0
+          ],
+          [
+            0,
+            0,
+            180
+          ]
+        ],
+        "classes": [
+          "CLEAN",
+          "SUSPICIOUS",
+          "MALICIOUS"
+        ]
+      }
+    },
+    {
+      "model": "HistGradientBoosting",
+      "accuracy": 100.0,
+      "f1": 100.0,
+      "malicious_recall": 100.0,
+      "suspicious_recall": 100.0,
+      "clean_recall": 100.0,
+      "roc_auc": 0.0,
+      "selection_score": 100.0,
+      "val_metrics": {
+        "accuracy": 100.0,
+        "precision": 100.0,
+        "recall": 100.0,
+        "f1_score": 100.0,
+        "f1_weighted": 100.0,
+        "malicious_recall": 100.0,
+        "suspicious_recall": 100.0,
+        "clean_recall": 100.0,
+        "roc_auc": 0.0,
+        "per_class": {
+          "CLEAN": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1": 100.0,
+            "support": 1350
+          },
+          "SUSPICIOUS": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1": 100.0,
+            "support": 270
+          },
+          "MALICIOUS": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1": 100.0,
+            "support": 180
+          }
+        },
+        "confusion_matrix": [
+          [
+            1350,
+            0,
+            0
+          ],
+          [
+            0,
+            270,
+            0
+          ],
+          [
+            0,
+            0,
+            180
+          ]
+        ],
+        "classes": [
+          "CLEAN",
+          "SUSPICIOUS",
+          "MALICIOUS"
+        ]
+      }
+    },
+    {
+      "model": "Gradient Boosting",
+      "accuracy": 99.94,
+      "f1": 99.85,
+      "malicious_recall": 99.44,
+      "suspicious_recall": 100.0,
+      "clean_recall": 100.0,
+      "roc_auc": 0.0,
+      "selection_score": 99.66,
+      "val_metrics": {
+        "accuracy": 99.94,
+        "precision": 99.94,
+        "recall": 99.94,
+        "f1_score": 99.85,
+        "f1_weighted": 99.94,
+        "malicious_recall": 99.44,
+        "suspicious_recall": 100.0,
+        "clean_recall": 100.0,
+        "roc_auc": 0.0,
+        "per_class": {
+          "CLEAN": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1": 100.0,
+            "support": 1350
+          },
+          "SUSPICIOUS": {
+            "precision": 99.63,
+            "recall": 100.0,
+            "f1": 99.82,
+            "support": 270
+          },
+          "MALICIOUS": {
+            "precision": 100.0,
+            "recall": 99.44,
+            "f1": 99.72,
+            "support": 180
+          }
+        },
+        "confusion_matrix": [
+          [
+            1350,
+            0,
+            0
+          ],
+          [
+            0,
+            270,
+            0
+          ],
+          [
+            0,
+            1,
+            179
+          ]
+        ],
+        "classes": [
+          "CLEAN",
+          "SUSPICIOUS",
+          "MALICIOUS"
+        ]
+      }
+    }
+  ],
+  "final_test_metrics": {
+    "accuracy": 100.0,
+    "precision": 100.0,
+    "recall": 100.0,
+    "f1_score": 100.0,
+    "f1_weighted": 100.0,
+    "malicious_recall": 100.0,
+    "suspicious_recall": 100.0,
+    "clean_recall": 100.0,
+    "roc_auc": 0.0,
+    "per_class": {
+      "CLEAN": {
+        "precision": 100.0,
+        "recall": 100.0,
+        "f1": 100.0,
+        "support": 1351
+      },
+      "SUSPICIOUS": {
+        "precision": 100.0,
+        "recall": 100.0,
+        "f1": 100.0,
+        "support": 270
+      },
+      "MALICIOUS": {
+        "precision": 100.0,
+        "recall": 100.0,
+        "f1": 100.0,
+        "support": 180
+      }
+    },
+    "confusion_matrix": [
+      [
+        1351,
+        0,
+        0
+      ],
+      [
+        0,
+        270,
+        0
+      ],
+      [
+        0,
+        0,
+        180
+      ]
+    ],
+    "classes": [
+      "CLEAN",
+      "SUSPICIOUS",
+      "MALICIOUS"
+    ]
+  },
+  "feature_importances": [
+    {
+      "rank": 1,
+      "feature": "Obfuscation Score",
+      "raw_name": "obfuscation_score",
+      "importance": 20.37
+    },
+    {
+      "rank": 2,
+      "feature": "Suspicious String Count",
+      "raw_name": "suspicious_string_count",
+      "importance": 13.3
+    },
+    {
+      "rank": 3,
+      "feature": "Compression Ratio",
+      "raw_name": "compression_ratio",
+      "importance": 11.47
+    },
+    {
+      "rank": 4,
+      "feature": "Suspicious Cmd Count",
+      "raw_name": "suspicious_cmd_count",
+      "importance": 8.65
+    },
+    {
+      "rank": 5,
+      "feature": "Magic Is Pe",
+      "raw_name": "magic_is_pe",
+      "importance": 7.48
+    },
+    {
+      "rank": 6,
+      "feature": "Is Dangerous Extension",
+      "raw_name": "is_dangerous_extension",
+      "importance": 6.48
+    },
+    {
+      "rank": 7,
+      "feature": "File Entropy",
+      "raw_name": "file_entropy",
+      "importance": 5.14
+    },
+    {
+      "rank": 8,
+      "feature": "Non Ascii Ratio",
+      "raw_name": "non_ascii_ratio",
+      "importance": 4.97
+    },
+    {
+      "rank": 9,
+      "feature": "Magic Entropy",
+      "raw_name": "magic_entropy",
+      "importance": 3.62
+    },
+    {
+      "rank": 10,
+      "feature": "Suspicious Url Count",
+      "raw_name": "suspicious_url_count",
+      "importance": 2.59
+    },
+    {
+      "rank": 11,
+      "feature": "Is Script Ext",
+      "raw_name": "is_script_ext",
+      "importance": 2.45
+    },
+    {
+      "rank": 12,
+      "feature": "Extension Category Script",
+      "raw_name": "extension_category_script",
+      "importance": 2.03
+    }
+  ]
+}

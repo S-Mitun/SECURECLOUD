@@ -1,0 +1,253 @@
+/* SecureCloud 2.0 - Cybersecurity SOC Theme CSS */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-main: #070a12;
+  --bg-card: #0f172a;
+  --bg-card-hover: #1e293b;
+  --bg-darker: #050810;
+  --border-color: #1e293b;
+  --border-glow: #0ea5e9;
+  --primary: #0284c7;
+  --primary-hover: #0369a1;
+  --accent: #38bdf8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --critical: #dc2626;
+  --text-main: #f8fafc;
+  --text-muted: #cbd5e1;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+code, pre, .mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Glassmorphism & Card styling */
+.glass-card {
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+  color: #f8fafc;
+}
+
+.glass-card-glow {
+  border: 1px solid rgba(14, 165, 233, 0.4);
+  box-shadow: 0 0 18px rgba(14, 165, 233, 0.2);
+}
+
+.glass-card-danger {
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 24px rgba(239, 68, 68, 0.3);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #070a12;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
+}
+
+/* Badges */
+.badge-clean {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.badge-suspicious {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.badge-malicious {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  animation: pulse-danger 2s infinite;
+}
+
+@keyframes pulse-danger {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Base breach 3-second military security alarm banner styling */
+.siren-banner {
+  background: linear-gradient(90deg, #991b1b, #dc2626, #991b1b);
+  border-bottom: 2px solid #ef4444;
+  animation: siren-glow 1s infinite alternate;
+}
+
+@keyframes siren-glow {
+  0% { box-shadow: 0 0 15px rgba(220, 38, 38, 0.6); }
+  100% { box-shadow: 0 0 35px rgba(239, 68, 68, 0.9); }
+}
+
+/* Table styling */
+.soc-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+.soc-table th {
+  background: #0f172a;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #1e293b;
+}
+
+.soc-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.7);
+  font-size: 0.8125rem;
+  color: #f8fafc;
+}
+
+.soc-table tr:hover td {
+  background: rgba(30, 41, 59, 0.45);
+}
+
+/* Cyber Buttons */
+.btn-cyber {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff !important;
+  font-weight: 600;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 14px rgba(14, 165, 233, 0.3);
+  transition: all 0.2s ease;
+}
+.btn-cyber:hover {
+  background: linear-gradient(135deg, #0369a1, #075985);
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-danger-cyber {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #ffffff !important;
+  font-weight: 600;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  box-shadow: 0 0 14px rgba(220, 38, 38, 0.3);
+  transition: all 0.2s ease;
+}
+.btn-danger-cyber:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Word / DOCX Pure White Document Sheet with Crisp Black Typography */
+.docx-document-sheet {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.65;
+  border: 1px solid #cbd5e1;
+}
+
+.docx-document-sheet h1, 
+.docx-document-sheet h2, 
+.docx-document-sheet h3, 
+.docx-document-sheet h4, 
+.docx-document-sheet strong, 
+.docx-document-sheet b {
+  color: #000000 !important;
+  font-weight: 700;
+}
+
+.docx-document-sheet p, 
+.docx-document-sheet span, 
+.docx-document-sheet div, 
+.docx-document-sheet li {
+  color: #111827 !important;
+}
+
+.docx-document-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  border: 1px solid #94a3b8;
+  background: #ffffff;
+}
+
+.docx-document-sheet td, 
+.docx-document-sheet th {
+  border: 1px solid #cbd5e1;
+  padding: 0.65rem 0.85rem;
+  color: #111827 !important;
+}
+
+.docx-document-sheet pre {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  padding: 1rem;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  overflow-x: auto;
+  border: 1px solid #334155;
+  margin: 0.75rem 0;
+}
+
+.docx-document-sheet code {
+  color: #38bdf8 !important;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Sentinel VM & Grafana Waveform Container */
+.sentinel-waveform-canvas {
+  background: #070d19;
+  border-radius: 8px;
+  border: 1px solid #1e293b;
+}
+
+/* Radar Pulse for SOC Live Telemetry */
+.live-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: live-pulse-anim 1.8s infinite;
+}
+@keyframes live-pulse-anim {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}

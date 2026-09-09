@@ -1,0 +1,14 @@
+# SecureCloud 2.0 - Prometheus Scraper Configuration
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: "securecloud_soc"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["localhost:8000"]
+        labels:
+          environment: "production"
+          service: "securecloud-backend"
+          engine: "hybrid-ml-threat-engine"

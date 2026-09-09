@@ -1,0 +1,228 @@
+{
+  "active_model_version": "securecloud-threat-model-v2",
+  "models": {
+    "securecloud-threat-model-v1": {
+      "version": "securecloud-threat-model-v1",
+      "algorithm": "Random Forest",
+      "model_path": "C:\\Users\\Mitun S\\.gemini\\antigravity\\scratch\\SecureCloud_2.0\\ml\\models\\securecloud-threat-model-v1.joblib",
+      "model_filename": "securecloud-threat-model-v1.joblib",
+      "registered_at": "31 Aug 2026 11:36:24",
+      "dataset_name": "security_dataset.csv",
+      "dataset_hash": "f864cd61512e855b",
+      "dataset_rows": 12001,
+      "feature_count": 30,
+      "accuracy": 100.0,
+      "precision": 100.0,
+      "recall": 100.0,
+      "f1_score": 100.0,
+      "malicious_recall": 100.0,
+      "suspicious_recall": 100.0,
+      "clean_recall": 100.0,
+      "roc_auc": 0.0,
+      "confusion_matrix": [
+        [
+          1351,
+          0,
+          0
+        ],
+        [
+          0,
+          270,
+          0
+        ],
+        [
+          0,
+          0,
+          180
+        ]
+      ],
+      "feature_importances": [
+        {
+          "rank": 1,
+          "feature": "Obfuscation Score",
+          "raw_name": "obfuscation_score",
+          "importance": 20.37
+        },
+        {
+          "rank": 2,
+          "feature": "Suspicious String Count",
+          "raw_name": "suspicious_string_count",
+          "importance": 13.3
+        },
+        {
+          "rank": 3,
+          "feature": "Compression Ratio",
+          "raw_name": "compression_ratio",
+          "importance": 11.47
+        },
+        {
+          "rank": 4,
+          "feature": "Suspicious Cmd Count",
+          "raw_name": "suspicious_cmd_count",
+          "importance": 8.65
+        },
+        {
+          "rank": 5,
+          "feature": "Magic Is Pe",
+          "raw_name": "magic_is_pe",
+          "importance": 7.48
+        },
+        {
+          "rank": 6,
+          "feature": "Is Dangerous Extension",
+          "raw_name": "is_dangerous_extension",
+          "importance": 6.48
+        },
+        {
+          "rank": 7,
+          "feature": "File Entropy",
+          "raw_name": "file_entropy",
+          "importance": 5.14
+        },
+        {
+          "rank": 8,
+          "feature": "Non Ascii Ratio",
+          "raw_name": "non_ascii_ratio",
+          "importance": 4.97
+        },
+        {
+          "rank": 9,
+          "feature": "Magic Entropy",
+          "raw_name": "magic_entropy",
+          "importance": 3.62
+        },
+        {
+          "rank": 10,
+          "feature": "Suspicious Url Count",
+          "raw_name": "suspicious_url_count",
+          "importance": 2.59
+        },
+        {
+          "rank": 11,
+          "feature": "Is Script Ext",
+          "raw_name": "is_script_ext",
+          "importance": 2.45
+        },
+        {
+          "rank": 12,
+          "feature": "Extension Category Script",
+          "raw_name": "extension_category_script",
+          "importance": 2.03
+        }
+      ],
+      "status": "ARCHIVED"
+    },
+    "securecloud-threat-model-v2": {
+      "version": "securecloud-threat-model-v2",
+      "algorithm": "Random Forest",
+      "model_path": "C:\\Users\\Mitun S\\.gemini\\antigravity\\scratch\\SecureCloud_2.0\\ml\\models\\securecloud-threat-model-v2.joblib",
+      "model_filename": "securecloud-threat-model-v2.joblib",
+      "registered_at": "31 Aug 2026 19:24:55",
+      "dataset_name": "security_dataset.csv",
+      "dataset_hash": "f864cd61512e855b",
+      "dataset_rows": 12001,
+      "feature_count": 30,
+      "accuracy": 100.0,
+      "precision": 100.0,
+      "recall": 100.0,
+      "f1_score": 100.0,
+      "malicious_recall": 100.0,
+      "suspicious_recall": 100.0,
+      "clean_recall": 100.0,
+      "roc_auc": 0.0,
+      "confusion_matrix": [
+        [
+          1351,
+          0,
+          0
+        ],
+        [
+          0,
+          270,
+          0
+        ],
+        [
+          0,
+          0,
+          180
+        ]
+      ],
+      "feature_importances": [
+        {
+          "rank": 1,
+          "feature": "Obfuscation Score",
+          "raw_name": "obfuscation_score",
+          "importance": 20.37
+        },
+        {
+          "rank": 2,
+          "feature": "Suspicious String Count",
+          "raw_name": "suspicious_string_count",
+          "importance": 13.3
+        },
+        {
+          "rank": 3,
+          "feature": "Compression Ratio",
+          "raw_name": "compression_ratio",
+          "importance": 11.47
+        },
+        {
+          "rank": 4,
+          "feature": "Suspicious Cmd Count",
+          "raw_name": "suspicious_cmd_count",
+          "importance": 8.65
+        },
+        {
+          "rank": 5,
+          "feature": "Magic Is Pe",
+          "raw_name": "magic_is_pe",
+          "importance": 7.48
+        },
+        {
+          "rank": 6,
+          "feature": "Is Dangerous Extension",
+          "raw_name": "is_dangerous_extension",
+          "importance": 6.48
+        },
+        {
+          "rank": 7,
+          "feature": "File Entropy",
+          "raw_name": "file_entropy",
+          "importance": 5.14
+        },
+        {
+          "rank": 8,
+          "feature": "Non Ascii Ratio",
+          "raw_name": "non_ascii_ratio",
+          "importance": 4.97
+        },
+        {
+          "rank": 9,
+          "feature": "Magic Entropy",
+          "raw_name": "magic_entropy",
+          "importance": 3.62
+        },
+        {
+          "rank": 10,
+          "feature": "Suspicious Url Count",
+          "raw_name": "suspicious_url_count",
+          "importance": 2.59
+        },
+        {
+          "rank": 11,
+          "feature": "Is Script Ext",
+          "raw_name": "is_script_ext",
+          "importance": 2.45
+        },
+        {
+          "rank": 12,
+          "feature": "Extension Category Script",
+          "raw_name": "extension_category_script",
+          "importance": 2.03
+        }
+      ],
+      "status": "ACTIVE"
+    }
+  },
+  "last_updated": "2026-08-31T19:24:55.761448"
+}

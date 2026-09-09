@@ -1,4 +1,4 @@
-# SECURECLOUD
+# SECURECLOUD 2.0
 > **"Secure Storage. Intelligent Protection."**
 > Automated ML Threat Detection, Real-Time Heuristic Scanning & Security Intelligence Platform
 
