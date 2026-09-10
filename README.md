@@ -191,4 +191,4 @@ Import `grafana/dashboards/securecloud_dashboard.json` into Grafana to visualize
 ---
 
 ## 9. Security Notice
-*SecureCloud 2.0 performs comprehensive static feature engineering, heuristic analysis, and machine learning threat classification. It is designed for secure enterprise cloud storage and SOC intelligence, operating safely without executing untrusted binaries.*
+*SecureCloud performs comprehensive static feature engineering, heuristic analysis, and machine learning threat classification. It is designed for secure enterprise cloud storage and SOC intelligence, operating safely without executing untrusted binaries.*
