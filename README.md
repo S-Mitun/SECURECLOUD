@@ -1,4 +1,4 @@
-# 🛡️ SecureCloud 2.0
+# 🛡️ SecureCloud
 > **"Secure Storage. Intelligent Protection."**  
 > Enterprise Zero-Trust Cloud Storage, Real-Time AI Threat Classification & Security Operations Center (SOC) Platform
 
@@ -15,7 +15,7 @@
 
 ## 🌐 Live Cloud Deployment
 
-SecureCloud 2.0 is deployed live as a unified, production-grade container on Railway Cloud. Everyone can access and evaluate both the **User Vault Portal** and the **Admin SOC Portal** using the live demo link below:
+SecureCloud is deployed live as a unified, production-grade container on Railway Cloud. Everyone can access and evaluate both the **User Vault Portal** and the **Admin SOC Portal** using the live demo link below:
 
 ### 🔗 **[Launch SecureCloud 2.0 Live Application](https://securecloud-app-production.up.railway.app)**
 
@@ -40,7 +40,7 @@ The platform enforces strict server-side role isolation. Users can only log into
 
 ## 🏛️ System Architecture
 
-SecureCloud 2.0 is engineered with a modular, zero-trust architecture separating user-space storage from administrative threat telemetry:
+SecureCloud is engineered with a modular, zero-trust architecture separating user-space storage from administrative threat telemetry:
 
 ```
                                   [ INTERNET / CLIENT INGRESS ]
@@ -74,7 +74,7 @@ SecureCloud 2.0 is engineered with a modular, zero-trust architecture separating
 
 ## 🛠️ Complete Technology Stack
 
-SecureCloud 2.0 uses a carefully curated stack to provide security, speed, and real-time intelligence:
+SecureCloud uses a carefully curated stack to provide security, speed, and real-time intelligence:
 
 ### Frontend
 - **Framework & Runtime**: React 18 (`react`, `react-dom`, `react-router-dom` v6)
@@ -266,7 +266,7 @@ The frontend will start at `http://localhost:5173` and communicate with the back
 
 ## 🧪 Testing & Automated Verification
 
-SecureCloud 2.0 includes automated test suites covering authentication, role isolation, ML threat scoring, and IST time conversions:
+SecureCloud includes automated test suites covering authentication, role isolation, ML threat scoring, and IST time conversions:
 
 ```bash
 # Run acceptance test suite
@@ -300,7 +300,7 @@ python scratch/verify_prod_portal_isolation.py
 
 ## 🔒 Security Notice
 
-SecureCloud 2.0 inspects files using static feature extraction, heuristic pattern matching, and machine learning inference. Uploaded files are analyzed in a sandboxed staging process without executing untrusted binaries. Client-side confidential documents are encrypted using AES-256-GCM, ensuring that even administrative accounts cannot view zero-knowledge vault contents.
+SecureCloud inspects files using static feature extraction, heuristic pattern matching, and machine learning inference. Uploaded files are analyzed in a sandboxed staging process without executing untrusted binaries. Client-side confidential documents are encrypted using AES-256-GCM, ensuring that even administrative accounts cannot view zero-knowledge vault contents.
 
 ---
 
