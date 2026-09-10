@@ -55,16 +55,10 @@ async function _fetchSingle(url, options, headers, originalEndpoint = '') {
     headers
   });
 
-  if (
-    res.status === 401 &&
-    !originalEndpoint.includes('/auth/login') &&
-    !originalEndpoint.includes('/auth/register') &&
-    !originalEndpoint.includes('/shares/public') &&
-    !originalEndpoint.includes('/auth/forgot-password') &&
-    !originalEndpoint.includes('/auth/reset-password') &&
-    !originalEndpoint.includes('/confidential/unlock') &&
-    !originalEndpoint.includes('/confidential/')
-  ) {
+  const isAuthAction = originalEndpoint.includes('/auth/') && !originalEndpoint.endsWith('/auth/me');
+  const isPublicAction = originalEndpoint.includes('/shares/public') || originalEndpoint.includes('/confidential/');
+
+  if (res.status === 401 && !isAuthAction && !isPublicAction) {
     sessionStorage.removeItem('sc_token');
     sessionStorage.removeItem('sc_user');
     localStorage.removeItem('sc_token');

@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from typing import Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -57,24 +58,54 @@ def ensure_schema_migrated():
         if "is_permanently_locked" not in c_cols:
             cursor.execute("ALTER TABLE confidential_files ADD COLUMN is_permanently_locked BOOLEAN DEFAULT 0")
 
-        # Auto-relocate storage paths if moved
+        # Auto-relocate storage paths across all tables
         try:
-            from backend.app.config import STORAGE_DIR
+            from backend.app.config import STORAGE_DIR, UPLOADS_DIR, CONFIDENTIAL_DIR, QUARANTINE_DIR
+
+            def _find_candidate(raw_path: str) -> Optional[str]:
+                if not raw_path:
+                    return None
+                if os.path.exists(raw_path):
+                    return raw_path
+                norm = raw_path.replace("\\", "/")
+                # Subpart check
+                sub = norm.split("/storage/")[-1] if "/storage/" in norm else (norm.split("storage/")[-1] if "storage/" in norm else None)
+                if sub:
+                    cand = os.path.join(STORAGE_DIR, *sub.strip("/").split("/"))
+                    if os.path.exists(cand):
+                        return cand
+                # Basename check
+                bname = os.path.basename(norm)
+                if bname:
+                    for folder in [UPLOADS_DIR, CONFIDENTIAL_DIR, QUARANTINE_DIR]:
+                        cand = os.path.join(folder, bname)
+                        if os.path.exists(cand):
+                            return cand
+                return None
+
             cursor.execute("SELECT id, storage_path FROM files")
             for fid, sp in cursor.fetchall():
-                if sp and not os.path.exists(sp) and "storage" in sp:
-                    sub_part = sp.replace("\\", "/").split("/storage/")[-1] if "/storage/" in sp.replace("\\", "/") else sp.split("storage")[-1].lstrip("\\/")
-                    candidate = os.path.join(STORAGE_DIR, *sub_part.split("/"))
-                    if os.path.exists(candidate):
-                        cursor.execute("UPDATE files SET storage_path = ? WHERE id = ?", (candidate, fid))
+                relocated = _find_candidate(sp)
+                if relocated and relocated != sp:
+                    cursor.execute("UPDATE files SET storage_path = ? WHERE id = ?", (relocated, fid))
             
+            cursor.execute("SELECT id, storage_path FROM file_versions")
+            for vid, sp in cursor.fetchall():
+                relocated = _find_candidate(sp)
+                if relocated and relocated != sp:
+                    cursor.execute("UPDATE file_versions SET storage_path = ? WHERE id = ?", (relocated, vid))
+
+            cursor.execute("SELECT id, restore_path FROM recycle_bin")
+            for bid, rp in cursor.fetchall():
+                relocated = _find_candidate(rp)
+                if relocated and relocated != rp:
+                    cursor.execute("UPDATE recycle_bin SET restore_path = ? WHERE id = ?", (relocated, bid))
+
             cursor.execute("SELECT id, quarantine_path FROM quarantine_files")
             for qid, qp in cursor.fetchall():
-                if qp and not os.path.exists(qp) and "storage" in qp:
-                    sub_part = qp.replace("\\", "/").split("/storage/")[-1] if "/storage/" in qp.replace("\\", "/") else qp.split("storage")[-1].lstrip("\\/")
-                    candidate = os.path.join(STORAGE_DIR, *sub_part.split("/"))
-                    if os.path.exists(candidate):
-                        cursor.execute("UPDATE quarantine_files SET quarantine_path = ? WHERE id = ?", (candidate, qid))
+                relocated = _find_candidate(qp)
+                if relocated and relocated != qp:
+                    cursor.execute("UPDATE quarantine_files SET quarantine_path = ? WHERE id = ?", (relocated, qid))
         except Exception as p_err:
             print(f"Path auto-relocation notice: {p_err}")
 

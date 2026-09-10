@@ -720,16 +720,15 @@ function render() {
     <header class="border-b border-slate-800 bg-slate-950/95 backdrop-blur sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <!-- Logo & Branding -->
-        <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab(state.user && state.user.role === 'ADMIN' ? 'soc-overview' : 'my-files')">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-sky-600 to-cyan-400 p-0.5 shadow-lg shadow-sky-500/20">
-            <div class="w-full h-full bg-slate-950 rounded-[7px] flex items-center justify-center">
-              <i data-lucide="shield-check" class="w-5 h-5 text-sky-400"></i>
+        <div class="flex items-center space-x-3 cursor-pointer select-none" onclick="window.location.hash='#/'">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-sky-600 to-cyan-400 p-0.5 shadow-lg shadow-sky-500/20">
+                <div class="w-full h-full bg-slate-950 rounded-[7px] flex items-center justify-center">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-sky-400"></i>
+                </div>
             </div>
-          </div>
-          <div>
-            <span class="font-black tracking-wider text-lg text-white">SECURE<span class="text-sky-400">CLOUD</span> <span class="text-xs px-1.5 py-0.5 bg-sky-950 border border-sky-500/40 text-sky-300 rounded ml-1 font-mono">2.0</span></span>
-            <p class="text-[10px] text-slate-400 uppercase tracking-widest -mt-1 font-mono">Automated ML Threat Platform</p>
-          </div>
+            <div>
+                <span class="font-black tracking-wider text-lg text-white">SECURE<span class="text-sky-400">CLOUD</span></span>
+            </div>
         </div>
 
         <!-- Navigation Tabs -->

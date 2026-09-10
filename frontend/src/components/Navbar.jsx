@@ -104,9 +104,6 @@ export function Navbar() {
               <span className="font-black tracking-wider text-lg text-white">
                 SECURE<span className="text-sky-400">CLOUD</span>
               </span>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest -mt-1 font-mono">
-                Automated ML Threat Platform
-              </p>
             </div>
           </Link>
 

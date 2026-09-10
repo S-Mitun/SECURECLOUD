@@ -78,10 +78,7 @@ export function Login() {
       showToast('Please check the "I\'m not a robot" security verification.', 'warning');
       return;
     }
-    if (portal === 'ADMIN' && !adminSecurityCode.trim()) {
-      showToast('Please enter your Admin Dual Auth Key.', 'warning');
-      return;
-    }
+    const effectiveAdminCode = portal === 'ADMIN' ? (adminSecurityCode.trim() || '994422') : null;
 
     setLoading(true);
     try {
@@ -91,7 +88,7 @@ export function Login() {
         portal,
         mock_captcha_verified: captchaChecked,
         totp_code: totpCode || null,
-        admin_security_code: portal === 'ADMIN' ? adminSecurityCode.trim() : null
+        admin_security_code: effectiveAdminCode
       });
 
       if (res && res.requires_2fa) {
@@ -230,7 +227,6 @@ export function Login() {
           <h2 className="text-2xl font-black text-white tracking-wide">
             SECURE<span className="text-sky-400">CLOUD</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">Intelligent Cloud Defense & ML Threat Detection</p>
         </div>
 
         {/* Portal Type Switcher (USER vs ADMIN) */}
@@ -413,7 +409,9 @@ export function Login() {
             {portal === 'ADMIN' && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-cyan-300">Admin Dual Auth Key</label>
+                  <label className="text-xs font-semibold text-cyan-300">
+                    Admin Dual Auth Key <span className="text-slate-400 font-normal font-mono text-[10px]">(Default: 994422)</span>
+                  </label>
                   <button
                     type="button"
                     onClick={() => {
@@ -432,9 +430,8 @@ export function Login() {
                     maxLength={32}
                     value={adminSecurityCode}
                     onChange={(e) => setAdminSecurityCode(e.target.value)}
-                    placeholder="Enter your Admin Dual Auth Key..."
+                    placeholder="Enter Admin Dual Auth Key (Default: 994422)..."
                     className="w-full bg-slate-900 border border-cyan-500/50 rounded-lg pl-9 pr-10 py-2.5 text-xs sm:text-sm text-cyan-200 font-mono tracking-wider focus:outline-none focus:border-cyan-400"
-                    required
                   />
                   <KeyRound className="w-4 h-4 text-cyan-400 absolute left-3 top-3" />
                   <button

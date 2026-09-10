@@ -21,11 +21,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Database & Storage
-*.db
-*.sqlite3
-securecloud.db
-storage/**
-!storage/.gitkeep
+storage/temp/
+storage/cache/
 
 # Environment variables & secrets
 .env

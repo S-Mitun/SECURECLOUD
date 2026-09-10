@@ -106,32 +106,47 @@ def get_user_storage_metrics(db: Session, user_id: int) -> Dict[str, Any]:
 def resolve_storage_path(stored_path: Optional[str]) -> Optional[str]:
     """
     Dynamically resolves stored_path against the current active STORAGE_DIR.
-    Self-heals if the project folder was renamed or moved.
+    Self-heals across Windows, Linux Docker, and relocations.
     """
     if not stored_path:
         return stored_path
     if os.path.exists(stored_path):
         return stored_path
     
+    from backend.app.config import STORAGE_DIR, BASE_DIR, UPLOADS_DIR, CONFIDENTIAL_DIR, QUARANTINE_DIR
     norm_path = stored_path.replace("\\", "/")
+    
+    # 1. Check relative to BASE_DIR directly
+    base_candidate = os.path.join(str(BASE_DIR), *norm_path.lstrip("/").split("/"))
+    if os.path.exists(base_candidate):
+        return base_candidate
+        
+    # 2. Check within storage/
+    sub_part = None
     if "/storage/" in norm_path:
         sub_part = norm_path.split("/storage/")[-1]
-        from backend.app.config import STORAGE_DIR
-        candidate = os.path.join(STORAGE_DIR, *sub_part.split("/"))
-        if os.path.exists(candidate):
-            return candidate
+    elif norm_path.startswith("storage/"):
+        sub_part = norm_path[len("storage/"):]
     elif "storage/" in norm_path:
-        sub_part = norm_path.split("storage/")[-1].lstrip("/")
-        from backend.app.config import STORAGE_DIR
-        candidate = os.path.join(STORAGE_DIR, *sub_part.split("/"))
-        if os.path.exists(candidate):
-            return candidate
+        sub_part = norm_path.split("storage/")[-1]
     elif "storage" in norm_path:
-        sub_part = norm_path.split("storage")[-1].lstrip("/\\")
-        from backend.app.config import STORAGE_DIR
-        candidate = os.path.join(STORAGE_DIR, *sub_part.split("/"))
+        sub_part = norm_path.split("storage")[-1].lstrip("/")
+        
+    if sub_part:
+        candidate = os.path.join(str(STORAGE_DIR), *sub_part.strip("/").split("/"))
         if os.path.exists(candidate):
             return candidate
+
+    # 3. Check by basename across uploads, confidential, quarantine
+    bname = os.path.basename(norm_path)
+    if bname:
+        for folder in [UPLOADS_DIR, CONFIDENTIAL_DIR, QUARANTINE_DIR]:
+            cand = os.path.join(str(folder), bname)
+            if os.path.exists(cand):
+                return cand
+
+    if sub_part:
+        return os.path.join(str(STORAGE_DIR), *sub_part.strip("/").split("/"))
             
     return stored_path
 
@@ -180,13 +195,19 @@ def ensure_physical_file(file_rec: Any, db: Optional[Session] = None) -> str:
 
     current_path = resolve_storage_path(getattr(file_rec, "storage_path", None))
     if current_path and os.path.exists(current_path):
+        if hasattr(file_rec, "storage_path") and file_rec.storage_path != current_path:
+            file_rec.storage_path = current_path
+            if db:
+                try:
+                    db.commit()
+                except Exception:
+                    pass
         # Validate image headers for image extensions
         if ext in [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"]:
             try:
                 with open(current_path, "rb") as fp:
                     head = fp.read(16)
                 if not (head.startswith(b"\x89PNG") or head.startswith(b"\xff\xd8") or head.startswith(b"GIF8") or head.startswith(b"RIFF")):
-                    # Self-heal corrupted/dummy image with real PNG image binary
                     valid_bytes = generate_valid_preview_image(filename)
                     with open(current_path, "wb") as fp:
                         fp.write(valid_bytes)

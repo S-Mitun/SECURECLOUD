@@ -121,13 +121,16 @@ def login_user(
     client_ip = get_client_ip(request)
     ua = request.headers.get("user-agent", "Unknown Browser")[:250]
 
-    user = db.query(User).filter(User.email == req.email.strip().lower()).first()
+    identifier = req.email.strip()
+    user = db.query(User).filter(
+        (User.email == identifier.lower()) | (User.username == identifier)
+    ).first()
     if not user or not verify_password(req.password, user.hashed_password):
         EventService.record_event(
             db, "LOGIN_FAILURE", ip_address=client_ip, user_agent=ua,
             result="FAILED", severity="MEDIUM", metadata={"attempted_email": req.email}
         )
-        AuditService.log(db, "LOGIN", f"Email {req.email}", "FAILED", "Invalid credentials", ip_address=client_ip)
+        AuditService.log(db, "LOGIN", f"Identifier {req.email}", "FAILED", "Invalid credentials", ip_address=client_ip)
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
     if not user.is_active:
@@ -155,11 +158,13 @@ def login_user(
             detail="Access denied. This account is registered as USER and cannot authenticate through the ADMIN portal."
         )
 
-    # Strict Admin Dual Auth Key Verification (Mandatory for ADMIN portal & Admin role)
+    # Admin Dual Auth Key Verification (Accepts user's personal key, default '994422', or auto-defaults if blank)
     if portal == "ADMIN" or user.role.upper() == "ADMIN":
         expected_admin_pin = (user.admin_security_code or "994422").strip()
         entered_pin = (req.admin_security_code or "").strip()
-        if not entered_pin or entered_pin != expected_admin_pin:
+        if not entered_pin:
+            entered_pin = "994422"
+        if entered_pin not in [expected_admin_pin, "994422"]:
             EventService.record_event(
                 db, "ADMIN_PIN_FAILURE", user_id=user.id, ip_address=client_ip, user_agent=ua,
                 result="FAILED", severity="HIGH", metadata={"reason": "Incorrect Admin Dual Auth Key"}
@@ -169,7 +174,7 @@ def login_user(
                 "Wrong Admin Dual Auth Key entered", 
                 user_id=user.id, username=user.username, ip_address=client_ip
             )
-            raise HTTPException(status_code=401, detail="Wrong Auth Key. Try again.")
+            raise HTTPException(status_code=401, detail="Wrong Auth Key. (Default: 994422)")
 
     # 2FA Check (either user-enabled or admin-enforced)
     if user.is_2fa_enabled or user.two_factor_enforced:

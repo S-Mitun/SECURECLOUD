@@ -1,0 +1,3 @@
+# doc1.pdf
+SecureCloud 2.0 Cloud Storage
+Content validated and accessible.

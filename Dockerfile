@@ -21,6 +21,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
+    libgomp1 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -29,16 +30,17 @@ COPY backend/requirements.txt ./backend/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r backend/requirements.txt
 
-# Copy Backend, ML, Scripts, and seed database
+# Copy Backend, ML, Scripts, complete database, and file storage
 COPY backend/ ./backend/
 COPY ml/ ./ml/
 COPY scripts/ ./scripts/
-COPY securecloud.db* ./
+COPY securecloud.db ./securecloud.db
+COPY storage/ ./storage/
 
 # Copy compiled frontend from Stage 1 into the location expected by FastAPI
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Create necessary storage directories
+# Ensure storage directories exist
 RUN mkdir -p storage/uploads storage/quarantine storage/confidential storage/recycle_bin storage/temp
 
 # Default environment configuration
