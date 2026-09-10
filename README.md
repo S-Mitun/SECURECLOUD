@@ -6,7 +6,7 @@
 
 ## 1. Project Overview
 
-**SecureCloud 2.0** is a production-grade cloud storage and cybersecurity intelligence platform designed for zero-trust environments. Unlike conventional cloud vaults that rely solely on signature-based anti-virus or superficial checks, SecureCloud integrates a **genuine end-to-end Machine Learning training and inference pipeline** combined with **static heuristic scanning**, **cryptographic SHA-256 fingerprinting**, **zero-knowledge confidential vaults**, **format-preserving multi-type file previewers**, and **real-time SOC telemetry**.
+**SecureCloud is a production-grade cloud storage and cybersecurity intelligence platform designed for zero-trust environments. Unlike conventional cloud vaults that rely solely on signature-based anti-virus or superficial checks, SecureCloud integrates a **genuine end-to-end Machine Learning training and inference pipeline** combined with **static heuristic scanning**, **cryptographic SHA-256 fingerprinting**, **zero-knowledge confidential vaults**, **format-preserving multi-type file previewers**, and **real-time SOC telemetry**.
 
 ---
 
