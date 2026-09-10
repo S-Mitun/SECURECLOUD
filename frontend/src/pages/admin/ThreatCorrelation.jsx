@@ -570,7 +570,9 @@ export function ThreatCorrelation() {
                             }`}
                           >
                             {isMitigated && '✓ '}
-                            {optId.replace('OPTION_', 'Opt ')}
+                            {optId === 'OPTION_1' ? 'Ingress Firewall' :
+                             optId === 'OPTION_2' ? 'Payload Sandbox' :
+                             optId === 'OPTION_3' ? 'IAM / 2FA' : 'Sessions Broker'}
                           </span>
                         );
                       })}
@@ -688,20 +690,22 @@ export function ThreatCorrelation() {
                     {/* Targeted Mitigation Options Selection */}
                     <div className="space-y-2 pt-2 border-t border-rose-500/20">
                       <div className="text-[11px] font-mono font-bold text-rose-300 uppercase flex items-center justify-between">
-                        <span>Countermeasure Vectors to Execute:</span>
+                        <span>Remediation Policy Vectors:</span>
                         <span className="text-[10px] text-slate-400 font-normal">
-                          {selectedOptions.length} of 4 Selected {!isClusterResolved && `(-${totalReductionFromSelected}% Threat Reduction)`}
+                          {selectedOptions.length} of 4 Countermeasures Selected
                         </span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {THREAT_CORRELATION_OPTIONS.map(opt => {
                           const isChecked = selectedOptions.includes(opt.id);
                           const isOptMitigated = mitigatedOpts.includes(opt.id);
-                          const reductionVal = OPTION_REDUCTIONS[opt.id] || 25;
+                          const domainTag = opt.id === 'OPTION_1' ? 'FIREWALL' :
+                                           opt.id === 'OPTION_2' ? 'SANDBOX' :
+                                           opt.id === 'OPTION_3' ? 'IAM / 2FA' : 'SESSION BROKER';
                           return (
                             <label
                               key={opt.id}
-                              className={`flex items-center justify-between p-2 rounded-lg border text-xs font-mono cursor-pointer transition ${
+                              className={`flex items-center justify-between p-2.5 rounded-lg border text-xs font-mono cursor-pointer transition ${
                                 isChecked 
                                   ? isOptMitigated && isClusterResolved
                                     ? 'border-emerald-500/50 bg-emerald-950/40 text-emerald-300'
@@ -716,13 +720,13 @@ export function ThreatCorrelation() {
                                   onChange={() => toggleOption(opt.id)}
                                   className="rounded border-slate-700 bg-slate-900 text-rose-600 focus:ring-rose-500 w-3.5 h-3.5"
                                 />
-                                <span className="truncate flex items-center gap-1">
+                                <span className="truncate flex items-center gap-1.5">
                                   {isOptMitigated && isClusterResolved && <Check className="w-3 h-3 text-emerald-400" />}
-                                  {opt.badge}: {opt.shortTitle.split(':')[1]}
+                                  {opt.shortTitle}
                                 </span>
                               </div>
-                              <span className="text-[10px] text-rose-400 font-bold shrink-0 ml-1">
-                                -{reductionVal}%
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 font-bold shrink-0 ml-1">
+                                {domainTag}
                               </span>
                             </label>
                           );
@@ -733,16 +737,16 @@ export function ThreatCorrelation() {
                     {/* Projected Threat Calculation Bar */}
                     {!isClusterResolved && (
                       <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs font-mono">
-                        <span className="text-slate-400">Projected Threat Score:</span>
+                        <span className="text-slate-400">Target Remediated State:</span>
                         <div className="flex items-center gap-2 font-bold">
-                          <span className="text-rose-400">{clusterScore}%</span>
+                          <span className="text-rose-400">Incident Score: {clusterScore}%</span>
                           <span className="text-slate-500">→</span>
                           <span className={projectedScore === 0 ? "text-emerald-400" : "text-amber-400"}>
-                            {projectedScore}% Threat
+                            {projectedScore === 0 ? "Target: 0.0% Neutralized" : `Projected: ${projectedScore}% Threat`}
                           </span>
                           {projectedScore === 0 && (
                             <span className="px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-[10px]">
-                              100% CONTAINED
+                              FULL CONTAINMENT
                             </span>
                           )}
                         </div>
@@ -778,8 +782,8 @@ export function ThreatCorrelation() {
                           disabled={executingAction !== null || selectedOptions.length === 0}
                           className="btn-cyber px-5 py-2.5 rounded-lg text-xs font-bold flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                         >
-                          {executingAction ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                          Execute Mitigation ({selectedOptions.map(o => o.replace('OPTION_', 'Opt ')).join('+')}: -{totalReductionFromSelected}% Threat)
+                          {executingAction ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4" />}
+                          Dispatch Security Countermeasures ({selectedOptions.length} Mitigation Policies)
                         </button>
                       </div>
                     )}

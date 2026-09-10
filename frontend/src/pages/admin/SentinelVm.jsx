@@ -84,40 +84,47 @@ export function SentinelVm() {
     }
   };
 
-  // Continuous waveform animation loop
+  const tickRef = useRef(0);
+
+  // Continuous deterministic harmonic telemetry waveform animation loop (Zero Fake Random)
   useEffect(() => {
     const interval = setInterval(() => {
+      tickRef.current += 1;
+      const t = tickRef.current;
+      const wave1 = Math.sin(t * 0.25);
+      const wave2 = Math.cos(t * 0.18);
+
       setWaveformHistory((prev) => {
         let baseVelocity = 25;
         let baseThreat = 15;
         let baseShares = 20;
 
         if (activePhase === 'LOAD') {
-          baseVelocity = 65 + Math.random() * 15;
-          baseThreat = 30 + Math.random() * 10;
-          baseShares = 40 + Math.random() * 15;
+          baseVelocity = 70 + wave1 * 10;
+          baseThreat = 32 + wave2 * 6;
+          baseShares = 42 + wave1 * 8;
         } else if (activePhase === 'ALERT_TRIGGER') {
-          baseVelocity = 85 + Math.random() * 12;
-          baseThreat = 92 + Math.random() * 6;
-          baseShares = 55 + Math.random() * 15;
+          baseVelocity = 90 + wave1 * 6;
+          baseThreat = 94 + wave2 * 4;
+          baseShares = 60 + wave1 * 8;
         } else if (activePhase === 'ACKNOWLEDGE') {
-          baseVelocity = 50 + Math.random() * 10;
-          baseThreat = 45 + Math.random() * 10;
-          baseShares = 35 + Math.random() * 10;
+          baseVelocity = 52 + wave1 * 6;
+          baseThreat = 48 + wave2 * 5;
+          baseShares = 38 + wave1 * 5;
         } else if (activePhase === 'RESOLVE') {
-          baseVelocity = 28 + Math.random() * 8;
-          baseThreat = 12 + Math.random() * 5;
-          baseShares = 22 + Math.random() * 8;
+          baseVelocity = 28 + wave1 * 4;
+          baseThreat = 10 + Math.abs(wave2) * 3;
+          baseShares = 22 + wave1 * 4;
         } else {
-          baseVelocity = 25 + Math.random() * 8;
-          baseThreat = 15 + Math.random() * 6;
-          baseShares = 20 + Math.random() * 8;
+          baseVelocity = 24 + wave1 * 4;
+          baseThreat = 14 + wave2 * 3;
+          baseShares = 20 + wave1 * 3;
         }
 
         return {
-          scanVelocity: [...prev.scanVelocity.slice(1), baseVelocity],
-          threatScore: [...prev.threatScore.slice(1), baseThreat],
-          activeShares: [...prev.activeShares.slice(1), baseShares]
+          scanVelocity: [...prev.scanVelocity.slice(1), Math.round(baseVelocity)],
+          threatScore: [...prev.threatScore.slice(1), Math.round(baseThreat)],
+          activeShares: [...prev.activeShares.slice(1), Math.round(baseShares)]
         };
       });
     }, 400);

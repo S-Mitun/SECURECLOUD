@@ -482,7 +482,7 @@ class ThreatIntelService:
                     rule = IPRule(
                         ip_address=ip_addr,
                         rule_type="BLACKLIST",
-                        description=f"Auto-mitigated via {cluster_id} [Option 1]: Malicious Ingress Blocked",
+                        description=f"Auto-mitigated via {cluster_id} [Ingress Defense]: Malicious Ingress Blocked",
                         threat_status="CRITICAL_BLOCKED",
                         is_active=True
                     )
@@ -490,9 +490,9 @@ class ThreatIntelService:
                 else:
                     rule.rule_type = "BLACKLIST"
                     rule.is_active = True
-                actions_taken.append(f"[Option 1: IP Guard] Blacklisted attacker IP '{ip_addr}' (-25% Threat)")
+                actions_taken.append(f"[Ingress Security] Blacklisted offending IP '{ip_addr}' in SOC Firewall Rules")
             else:
-                actions_taken.append("[Option 1: IP Guard] Attacker IP ingress verified and baseline security rules enforced (-25% Threat)")
+                actions_taken.append("[Ingress Security] Enforced baseline perimeter filtering and ingress network isolation")
 
         # 2. OPTION 2: Quarantine suspicious / malicious payload files (Cryptographic & Payload vector)
         if opt2_active and corr.user_id:
@@ -511,23 +511,23 @@ class ThreatIntelService:
                             original_filename=uf.filename,
                             file_hash=uf.file_hash,
                             quarantine_path=uf.storage_path,
-                            reason=f"Mitigated via {cluster_id} [Option 2]: ML Threat score {uf.threat_score}% isolated in AES-256 staging enclave",
+                            reason=f"Mitigated via {cluster_id}: ML Threat score {uf.threat_score}% isolated in AES-256 staging enclave",
                             status="QUARANTINED",
                             quarantined_at=datetime.utcnow()
                         )
                         db.add(q_entry)
                         uf.security_status = "MALICIOUS"
-                        actions_taken.append(f"[Option 2: Payload Vault] Moved payload '{uf.filename}' to Quarantine Vault (-30% Threat)")
+                        actions_taken.append(f"[Payload Security] Quarantined payload '{uf.filename}' into AES-256 Quarantine Vault")
                         quarantined_any = True
             if not quarantined_any:
-                actions_taken.append("[Option 2: Payload Vault] Cryptographic payload signatures verified against IOC registry (-30% Threat)")
+                actions_taken.append("[Payload Security] Cryptographic payload signatures validated against IOC threat feeds")
 
         # 3. OPTION 3: Enforce 2FA on target user (Behavioral Heuristics & Anomaly vector)
         if opt3_active and corr.user_id:
             target_user = db.query(User).filter(User.id == corr.user_id).first()
             if target_user:
                 target_user.two_factor_enforced = True
-                actions_taken.append(f"[Option 3: Behavioral Heuristics] Enforced mandatory Two-Factor Authentication (2FA) on user '{target_user.username}' (-25% Threat)")
+                actions_taken.append(f"[Identity Security] Enforced mandatory Multi-Factor Authentication (2FA) on account '{target_user.username}'")
 
         # 4. OPTION 4: Revoke shared links and active sessions (Cross-Account Lateral Threat vector)
         if opt4_active and corr.user_id:
@@ -535,9 +535,9 @@ class ThreatIntelService:
             if shares:
                 for s in shares:
                     s.is_active = False
-                actions_taken.append(f"[Option 4: Lateral Containment] Revoked {len(shares)} active external distribution share token(s) (-20% Threat)")
+                actions_taken.append(f"[Distribution Security] Revoked {len(shares)} active external distribution share token(s)")
             else:
-                actions_taken.append("[Option 4: Lateral Containment] Validated distribution links and isolated user session boundaries (-20% Threat)")
+                actions_taken.append("[Distribution Security] Audited distribution links and isolated user session perimeter")
 
         # Calculate new progressively reduced score
         if len(selected_opts) >= 4 or reduction_amount >= prev_score:
