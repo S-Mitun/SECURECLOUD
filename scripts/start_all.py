@@ -21,7 +21,7 @@ from scripts.generate_dataset import generate_security_dataset
 
 def bootstrap_and_start():
     print("=" * 70)
-    print("SECURECLOUD 2.0 – AUTOMATED ML THREAT DETECTION ENGINE")
+    print("SECURECLOUD 2.0")
     print("=" * 70)
 
     # 1. Initialize DB & Storage

@@ -1,6 +1,6 @@
 # SECURECLOUD
 > **"Secure Storage. Intelligent Protection."**
-> Automated ML Threat Detection, Real-Time Heuristic Scanning & Security Intelligence Platform
+> Real-Time Heuristic Scanning & Security Intelligence Platform
 
 ---
 

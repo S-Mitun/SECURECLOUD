@@ -2,7 +2,7 @@
 # Starts SecureCloud 2.0 Unified Server, runs health check, and launches default browser.
 
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "          SECURECLOUD 2.0 - AUTOMATED ML THREAT PLATFORM" -ForegroundColor White
+Write-Host "                          SECURECLOUD 2.0" -ForegroundColor White
 Write-Host "                   'Secure Storage. Intelligent Protection.'" -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host ""

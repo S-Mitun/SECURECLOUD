@@ -28,6 +28,13 @@ import { SessionsManagement } from './pages/admin/SessionsManagement';
 import { AuditLogs } from './pages/admin/AuditLogs';
 import { VerifiedArtifacts } from './pages/admin/VerifiedArtifacts';
 
+import { useAuth } from './context/AuthContext';
+
+function RootRedirect() {
+  const { isAdmin } = useAuth();
+  return <Navigate to={isAdmin ? '/admin' : '/my-files'} replace />;
+}
+
 export default function App() {
   const location = useLocation();
   const isPublicShare = location.pathname.startsWith('/public-share');
@@ -43,8 +50,8 @@ export default function App() {
 
           {/* User Protected Routes */}
           <Route element={<ProtectedRoute requireAdmin={false} />}>
-            <Route path="/" element={<Navigate to="/my-files" replace />} />
-            <Route path="/dashboard" element={<Navigate to="/my-files" replace />} />
+            <Route path="/" element={<RootRedirect />} />
+            <Route path="/dashboard" element={<RootRedirect />} />
             <Route path="/my-files" element={<MyFiles />} />
             <Route path="/confidential" element={<ConfidentialVault />} />
             <Route path="/password-saves" element={<PasswordSaves />} />

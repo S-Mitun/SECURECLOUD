@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 title SecureCloud 2.0 - Launcher
 
 echo ======================================================================
-echo           SECURECLOUD 2.0 - AUTOMATED ML THREAT PLATFORM
+echo                           SECURECLOUD 2.0
 echo                    "Secure Storage. Intelligent Protection."
 echo ======================================================================
 echo.
