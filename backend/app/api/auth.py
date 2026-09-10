@@ -141,7 +141,7 @@ def login_user(
         AuditService.log(db, "LOGIN", f"User {user.username}", "BLOCKED", "Account suspended", user_id=user.id, username=user.username, ip_address=client_ip)
         raise HTTPException(status_code=403, detail="Account is suspended or locked down by SOC Administrator.")
 
-    # Strict Portal Validation
+    # Strict Portal Validation (Mutual Exclusivity)
     portal = (req.portal or req.portal_type or "USER").upper()
     if portal == "ADMIN" and user.role.upper() != "ADMIN":
         EventService.record_event(
@@ -155,7 +155,22 @@ def login_user(
         )
         raise HTTPException(
             status_code=403,
-            detail="Access denied. This account is registered as USER and cannot authenticate through the ADMIN portal."
+            detail="Access denied. This account is registered as USER and cannot authenticate through the ADMIN portal. Please log in through the User Portal."
+        )
+
+    if portal == "USER" and user.role.upper() == "ADMIN":
+        EventService.record_event(
+            db, "USER_PORTAL_ADMIN_INGRESS", user_id=user.id, ip_address=client_ip, user_agent=ua,
+            result="BLOCKED", severity="HIGH", metadata={"reason": "Admin attempted user portal ingress"}
+        )
+        AuditService.log(
+            db, "USER_PORTAL_ADMIN_INGRESS", f"Admin {user.username}", "BLOCKED", 
+            "ADMIN attempted authentication through USER portal",
+            user_id=user.id, username=user.username, role=user.role, ip_address=client_ip
+        )
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied. Administrator accounts must authenticate exclusively through the Admin Portal."
         )
 
     # Admin Dual Auth Key Verification (Accepts user's personal key, default '994422', or auto-defaults if blank)
