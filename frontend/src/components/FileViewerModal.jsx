@@ -86,7 +86,7 @@ export function FileViewerModal() {
       }
 
       // If it's a streamable media (PDF, Image, Video, Audio), fetch blob with Bearer token
-      const filename = modalData.original_filename || modalData.filename || data?.filename || '';
+      const filename = data?.filename || modalData.filename || modalData.original_filename || '';
       const ext = (filename.substring(filename.lastIndexOf('.')) || '').toLowerCase();
       const isMedia = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.mp3', '.wav', '.ogg', '.mp4', '.webm'].includes(ext) || data.format === 'STREAMABLE_MEDIA';
 
@@ -119,7 +119,7 @@ export function FileViewerModal() {
   const downloadUrl = fileApi.getDownloadUrl(targetFileId);
   const activeStreamUrl = blobStreamUrl || (viewData?.stream_url) || fileApi.getStreamUrl(targetFileId);
 
-  const filename = modalData.original_filename || modalData.filename || viewData?.filename || 'Document';
+  const filename = viewData?.filename || modalData.filename || modalData.original_filename || 'Document';
   const ext = (filename.substring(filename.lastIndexOf('.')) || '').toLowerCase();
   const mime = modalData.mime_type || viewData?.mime_type || '';
 

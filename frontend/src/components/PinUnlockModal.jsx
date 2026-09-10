@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { fileApi } from '../api/fileApi';
+import { API_BASE_URL } from '../api/apiClient';
 import { KeyRound, Eye, EyeOff, X, Unlock, Download, AlertTriangle, Clock, ShieldAlert } from 'lucide-react';
-import { LockoutCountdown, formatTimeRemaining } from './LockoutCountdown';
+import { LockoutCountdown, parseTargetTime, formatTimeRemaining } from './LockoutCountdown';
 
 export function PinUnlockModal({ onSuccess }) {
   const { activeModal, modalData, closeModal, showToast, openModal } = useApp();
@@ -26,14 +27,15 @@ export function PinUnlockModal({ onSuccess }) {
 
   const isDownloadAction = modalData.action === 'download';
   const targetFileId = modalData.id || modalData.file_id;
-  const filename = modalData.original_filename || modalData.filename || 'Confidential Document';
+  const filename = modalData.filename || modalData.original_filename || 'Confidential Document';
 
   // Check if currently locked
   const isLockedNow = () => {
     if (localPermanentlyLocked) return true;
     if (!localLockedUntil) return false;
-    const dateStr = localLockedUntil.includes('T') ? localLockedUntil : localLockedUntil.replace(' ', 'T') + 'Z';
-    return new Date(dateStr).getTime() > Date.now();
+    const targetMs = parseTargetTime(localLockedUntil);
+    if (!targetMs) return false;
+    return targetMs > Date.now();
   };
 
   const handleCountdownExpire = () => {
@@ -52,7 +54,7 @@ export function PinUnlockModal({ onSuccess }) {
       if (isDownloadAction) {
         // Authenticated download of decrypted bytes
         const token = (sessionStorage.getItem('sc_token') || localStorage.getItem('sc_token'));
-        const res = await fetch(`http://127.0.0.1:8000/api/confidential/unlock-download`, {
+        const res = await fetch(`${API_BASE_URL}/api/confidential/unlock-download`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

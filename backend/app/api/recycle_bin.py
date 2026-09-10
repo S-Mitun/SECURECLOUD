@@ -18,6 +18,21 @@ from backend.app.services.storage_service import format_size, recalculate_user_s
 
 router = APIRouter(prefix="/api/recycle-bin", tags=["Recycle Bin"])
 
+def to_ist(dt: Any) -> str:
+    """Formats a datetime or ISO string to standard Indian Standard Time (IST)."""
+    if not dt:
+        dt = datetime.utcnow()
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+        except Exception:
+            return dt
+    if hasattr(dt, 'tzinfo') and dt.tzinfo is not None:
+        ist = dt + timedelta(hours=5, minutes=30)
+    else:
+        ist = dt + timedelta(hours=5, minutes=30)
+    return ist.strftime("%d %b %Y, %I:%M:%S %p IST")
+
 @router.get("/list")
 def list_recycle_bin(
     current_user: User = Depends(get_current_user),
@@ -32,7 +47,8 @@ def list_recycle_bin(
     for item in items:
         f = item.file
         if f:
-            ist_time = item.deleted_at + timedelta(hours=5, minutes=30) if item.deleted_at else datetime.utcnow() + timedelta(hours=5, minutes=30)
+            ist_formatted = to_ist(item.deleted_at)
+            iso_str = (item.deleted_at or datetime.utcnow()).strftime("%Y-%m-%dT%H:%M:%SZ")
             res.append({
                 "id": item.id,
                 "file_id": f.id,
@@ -40,8 +56,9 @@ def list_recycle_bin(
                 "file_size": f.file_size,
                 "file_size_formatted": format_size(f.file_size),
                 "file_hash": f.file_hash,
-                "deleted_at": ist_time.strftime("%d %b %Y %H:%M:%S") + " IST",
-                "deleted_at_ist": ist_time.strftime("%d %b %Y %H:%M:%S") + " IST"
+                "deleted_at": ist_formatted,
+                "deleted_at_ist": ist_formatted,
+                "deleted_at_iso": iso_str
             })
     return res
 

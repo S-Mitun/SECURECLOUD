@@ -1,11 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Lock, AlertTriangle } from 'lucide-react';
 
+export function parseTargetTime(lockedUntil) {
+  if (!lockedUntil) return 0;
+  if (typeof lockedUntil === 'number') {
+    return lockedUntil > 1e11 ? lockedUntil : lockedUntil * 1000;
+  }
+  if (typeof lockedUntil !== 'string') return 0;
+
+  const raw = lockedUntil.trim();
+
+  // 1. Try direct parse if standard ISO
+  let parsed = Date.parse(raw);
+  if (!isNaN(parsed) && parsed > 0) return parsed;
+
+  // 2. Handle ISO without Z: "2026-09-10T21:45:00"
+  if (raw.includes('T')) {
+    const withZ = raw.endsWith('Z') ? raw : raw + 'Z';
+    parsed = Date.parse(withZ);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+
+  // 3. Handle formats like "10 Sep 2026 21:45:10" or "10 Sep 2026, 09:45:10 PM IST"
+  const clean = raw.replace(/\bIST\b/ig, '').replace(/,/g, '').trim();
+  parsed = Date.parse(clean);
+  if (!isNaN(parsed) && parsed > 0) {
+    // If it was IST time string, adjust from UTC assumption by subtracting 5.5 hours
+    return parsed - (5.5 * 3600 * 1000);
+  }
+
+  // 4. Regex fallback: "DD Mon YYYY HH:MM:SS"
+  const m = clean.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})(?:\s+(AM|PM))?$/i);
+  if (m) {
+    const months = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+    const month = months[m[2].toLowerCase()] ?? 0;
+    let hour = parseInt(m[4], 10);
+    const isPm = m[7] && m[7].toUpperCase() === 'PM';
+    const isAm = m[7] && m[7].toUpperCase() === 'AM';
+    if (isPm && hour < 12) hour += 12;
+    if (isAm && hour === 12) hour = 0;
+    const utcDate = Date.UTC(parseInt(m[3], 10), month, parseInt(m[1], 10), hour, parseInt(m[5], 10), parseInt(m[6], 10));
+    return utcDate - (5.5 * 3600 * 1000);
+  }
+
+  return 0;
+}
+
 export function formatTimeRemaining(seconds) {
-  if (seconds <= 0) return '00:00';
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
+  const s = Math.max(0, Math.floor(Number(seconds) || 0));
+  if (s <= 0) return '00:00';
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
 
   if (hours > 0) {
     return `${hours}h ${minutes.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
@@ -14,13 +60,15 @@ export function formatTimeRemaining(seconds) {
 }
 
 export function LockoutCountdown({ lockedUntil, isPermanentlyLocked, onExpire, compact = false }) {
-  const [remainingSeconds, setRemainingSeconds] = useState(() => {
-    if (isPermanentlyLocked) return 0;
-    if (!lockedUntil) return 0;
-    const target = new Date(lockedUntil.includes('Z') ? lockedUntil : lockedUntil.replace(' ', 'T') + 'Z').getTime();
+  const getRemainingSeconds = (targetStr) => {
+    if (isPermanentlyLocked || !targetStr) return 0;
+    const targetMs = parseTargetTime(targetStr);
+    if (!targetMs || isNaN(targetMs)) return 0;
     const now = Date.now();
-    return Math.max(0, Math.floor((target - now) / 1000));
-  });
+    return Math.max(0, Math.floor((targetMs - now) / 1000));
+  };
+
+  const [remainingSeconds, setRemainingSeconds] = useState(() => getRemainingSeconds(lockedUntil));
 
   useEffect(() => {
     if (isPermanentlyLocked || !lockedUntil) {
@@ -29,11 +77,7 @@ export function LockoutCountdown({ lockedUntil, isPermanentlyLocked, onExpire, c
     }
 
     const calculate = () => {
-      // Handle UTC date strings
-      const dateStr = lockedUntil.includes('T') ? lockedUntil : lockedUntil.replace(' ', 'T') + 'Z';
-      const target = new Date(dateStr).getTime();
-      const now = Date.now();
-      const diff = Math.max(0, Math.floor((target - now) / 1000));
+      const diff = getRemainingSeconds(lockedUntil);
       setRemainingSeconds(diff);
       if (diff <= 0 && onExpire) {
         onExpire();

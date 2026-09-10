@@ -55,6 +55,27 @@ export function RecycleBin() {
     showToast('Files in the Recycle Bin cannot be opened directly. Restore the file first.', 'warning');
   };
 
+  const formatDateIST = (dateVal) => {
+    if (!dateVal) return 'Recently (IST)';
+    if (typeof dateVal === 'string' && dateVal.includes('IST')) return dateVal;
+    try {
+      const d = new Date(dateVal);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        }) + ' IST';
+      }
+    } catch (e) {}
+    return String(dateVal);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Header Banner */}
@@ -93,7 +114,7 @@ export function RecycleBin() {
               <tr>
                 <th>Deleted File</th>
                 <th>File Size</th>
-                <th>Deleted Date</th>
+                <th>Deleted Date (IST)</th>
                 <th>Storage Status</th>
                 <th className="text-right">Actions</th>
               </tr>
@@ -111,7 +132,7 @@ export function RecycleBin() {
                   const targetId = file.file_id || file.id;
                   const displayName = file.original_name || file.filename || 'Deleted File';
                   const sizeDisplay = file.file_size_formatted || file.size_formatted || `${Math.round((file.file_size || file.size_bytes || 0) / 1024)} KB`;
-                  const dateDisplay = file.deleted_at_ist || file.deleted_at || file.updated_at || 'Recently (IST)';
+                  const dateDisplay = formatDateIST(file.deleted_at_ist || file.deleted_at || file.deleted_at_iso || file.updated_at);
 
                   return (
                     <tr key={String(file.id || targetId)}>
@@ -137,7 +158,7 @@ export function RecycleBin() {
                       <td className="font-mono text-xs text-slate-300">
                         {sizeDisplay}
                       </td>
-                      <td className="font-mono text-xs text-slate-400">
+                      <td className="font-mono text-xs text-slate-300">
                         {dateDisplay}
                       </td>
                       <td>

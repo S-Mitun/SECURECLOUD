@@ -10,7 +10,7 @@ import { PinUnlockModal } from '../components/PinUnlockModal';
 import { FileViewerModal } from '../components/FileViewerModal';
 import { RenameModal } from '../components/RenameModal';
 import { ShareCreateModal } from '../components/ShareCreateModal';
-import { LockoutCountdown } from '../components/LockoutCountdown';
+import { LockoutCountdown, parseTargetTime } from '../components/LockoutCountdown';
 
 export function ConfidentialVault() {
   const { openModal, showToast } = useApp();
@@ -50,8 +50,9 @@ export function ConfidentialVault() {
   const isFileLocked = (file) => {
     if (file.is_permanently_locked) return true;
     if (!file.locked_until) return false;
-    const dateStr = file.locked_until.includes('T') ? file.locked_until : file.locked_until.replace(' ', 'T') + 'Z';
-    return new Date(dateStr).getTime() > Date.now();
+    const targetMs = parseTargetTime(file.locked_until);
+    if (!targetMs) return false;
+    return targetMs > Date.now();
   };
 
   return (

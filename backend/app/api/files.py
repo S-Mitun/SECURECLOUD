@@ -400,6 +400,10 @@ def rename_file(
     clean_name = sanitize_filename(req.new_filename)
     old_name = f.filename
     f.filename = clean_name
+    f.original_filename = clean_name
+    _, ext = os.path.splitext(clean_name)
+    if ext:
+        f.extension = ext
     f.updated_at = datetime.utcnow()
     db.commit()
 
