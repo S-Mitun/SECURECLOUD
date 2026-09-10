@@ -106,7 +106,7 @@ def generate_friendly_guide():
 
     # Title Block Table
     t_header = Table([
-        [Paragraph("SECURECLOUD 2.0 - SIMPLE & EASY SOC GUIDE", title_style)],
+        [Paragraph("SECURECLOUD - SIMPLE & EASY SOC GUIDE", title_style)],
         [Paragraph("How Correlation, SOAR Policies & User Risk Matrix Work with Real Examples", sub_style)]
     ], colWidths=[548])
     t_header.setStyle(TableStyle([
@@ -310,7 +310,7 @@ def generate_friendly_guide():
 
     # Footer
     t_foot = Table([
-        [Paragraph("<b>SecureCloud 2.0</b> • User-Friendly SOC Operations Manual", ParagraphStyle('Foot', fontName='Helvetica', fontSize=8, textColor=colors.HexColor("#64748b"), alignment=TA_CENTER))]
+        [Paragraph("<b>SecureCloud</b> • User-Friendly SOC Operations Manual", ParagraphStyle('Foot', fontName='Helvetica', fontSize=8, textColor=colors.HexColor("#64748b"), alignment=TA_CENTER))]
     ], colWidths=[548])
     t_foot.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f1f5f9")),

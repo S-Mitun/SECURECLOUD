@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - PE Binary & EMBER Feature Analyzer
+SecureCloud - PE Binary & EMBER Feature Analyzer
 Parses Portable Executable (PE) headers, sections, exports, imports, and entropy using pefile.
 """
 

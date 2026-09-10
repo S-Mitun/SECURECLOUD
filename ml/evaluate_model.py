@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - ML Model Evaluation Engine
+SecureCloud - ML Model Evaluation Engine
 Computes comprehensive security classification metrics, confusion matrices, ROC-AUC, and feature importance.
 """
 

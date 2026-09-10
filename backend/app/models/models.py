@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - SQLAlchemy Database Models
+SecureCloud - SQLAlchemy Database Models
 Complete enterprise RBAC, file storage, security scanning, IOC Threat Intelligence, and User Risk Profiling schema.
 """
 
@@ -284,7 +284,7 @@ class VerifiedCleanArtifact(Base):
     verified_at = Column(DateTime, default=datetime.utcnow)
     verification_reason = Column(Text, default="Admin explicit verified clean approval")
     verification_scope = Column(String(32), default="GLOBAL") # GLOBAL, OWNER_ONLY
-    scanner_version = Column(String(64), default="SecureCloud Threat Engine v2.0")
+    scanner_version = Column(String(64), default="SecureCloud Threat Engine")
     model_version = Column(String(64), default="securecloud-lgbm-v2")
     feature_version = Column(String(32), default="EMBER2024-v3")
     created_at = Column(DateTime, default=datetime.utcnow)

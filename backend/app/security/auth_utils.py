@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Authentication & Role Authorization Security Engine
+SecureCloud - Authentication & Role Authorization Security Engine
 Strict server-side role validation, bcrypt hashing, JWT tokens, and TOTP 2FA.
 """
 
@@ -59,7 +59,7 @@ def generate_totp_secret() -> str:
 def generate_totp_qr_base64(username: str, secret: str) -> Dict[str, str]:
     """Generates otpauth URL and base64 QR code image."""
     totp = pyotp.TOTP(secret)
-    otpauth_url = totp.provisioning_uri(name=username, issuer_name="SecureCloud 2.0")
+    otpauth_url = totp.provisioning_uri(name=username, issuer_name="SecureCloud")
 
     qr = qrcode.QRCode(box_size=6, border=2)
     qr.add_data(otpauth_url)

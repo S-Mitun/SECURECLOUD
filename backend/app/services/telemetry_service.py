@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Telemetry & Prometheus Metrics Service
+SecureCloud - Telemetry & Prometheus Metrics Service
 Collects live VM metrics (CPU, RAM, Disk, Network, Latency) and exposes Prometheus format metrics.
 """
 

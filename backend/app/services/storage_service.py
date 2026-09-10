@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Storage Management Service
+SecureCloud - Storage Management Service
 File hashing (SHA-256, SHA-1, MD5), storage isolation, quota checking, and path resolution.
 """
 
@@ -162,7 +162,7 @@ def generate_valid_preview_image(filename: str) -> bytes:
         draw.rectangle([12, 12, 587, 347], outline=(56, 189, 248), width=2) # sky-400
         # Header banner
         draw.rectangle([14, 14, 585, 60], fill=(12, 74, 110)) # sky-900
-        draw.text((300, 37), "SECURECLOUD 2.0 • IMAGE ARTIFACT", fill=(224, 242, 254), anchor="mm")
+        draw.text((300, 37), "SECURECLOUD • IMAGE ARTIFACT", fill=(224, 242, 254), anchor="mm")
         # Center card
         draw.rectangle([60, 90, 540, 270], fill=(30, 41, 59), outline=(71, 85, 105), width=1) # slate-800
         draw.text((300, 140), filename[:35], fill=(255, 255, 255), anchor="mm")
@@ -257,7 +257,7 @@ def ensure_physical_file(file_rec: Any, db: Optional[Session] = None) -> str:
             import docx
             doc = docx.Document()
             doc.add_heading(filename, level=1)
-            doc.add_paragraph(f"SecureCloud 2.0 Document Repository — {filename}")
+            doc.add_paragraph(f"SecureCloud Document Repository — {filename}")
             doc.add_paragraph("Content verified and protected with cryptographic integrity.")
             doc.save(target_path)
             content = None
@@ -270,17 +270,17 @@ def ensure_physical_file(file_rec: Any, db: Optional[Session] = None) -> str:
             ws = wb.active
             ws.title = "Sheet1"
             ws.append(["File Name", "Status", "Platform"])
-            ws.append([filename, "Verified", "SecureCloud 2.0"])
+            ws.append([filename, "Verified", "SecureCloud"])
             wb.save(target_path)
             content = None
         except Exception:
-            content = f"File Name,Status,Platform\n{filename},Verified,SecureCloud 2.0\n".encode("utf-8")
+            content = f"File Name,Status,Platform\n{filename},Verified,SecureCloud\n".encode("utf-8")
     elif ext == ".json":
-        content = f'{{\n  "filename": "{filename}",\n  "status": "HEALTHY",\n  "platform": "SecureCloud 2.0"\n}}'.encode("utf-8")
+        content = f'{{\n  "filename": "{filename}",\n  "status": "HEALTHY",\n  "platform": "SecureCloud"\n}}'.encode("utf-8")
     elif ext == ".csv":
         content = f"Name,Status,Timestamp\n{filename},Clean,IST\n".encode("utf-8")
     else:
-        content = f"# {filename}\nSecureCloud 2.0 Cloud Storage\nContent validated and accessible.\n".encode("utf-8")
+        content = f"# {filename}\nSecureCloud Cloud Storage\nContent validated and accessible.\n".encode("utf-8")
 
     if content is not None:
         with open(target_path, "wb") as fp:

@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Real User Risk Profiling Engine
+SecureCloud - Real User Risk Profiling Engine
 Calculates per-user behavioral baselines, deterministic risk signals, signal fusion with decay,
 and explainable factor breakdowns.
 ZERO RANDOM / FAKE DATA: Every calculation is reproducible and derived from real database telemetry.

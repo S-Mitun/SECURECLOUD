@@ -1,5 +1,5 @@
 /**
- * SecureCloud 2.0 - Core Frontend Application Controller
+ * SecureCloud - Core Frontend Application Controller
  * Single-Page Architecture with Cybersecurity SOC Theme, Hybrid Threat Analytics & Real-Time Storage Telemetry.
  */
 
@@ -844,7 +844,7 @@ function renderTabContent() {
         <div class="w-20 h-20 bg-sky-950 border border-sky-500/40 rounded-2xl flex items-center justify-center mb-4 shadow-2xl shadow-sky-500/20 animate-bounce">
           <i data-lucide="shield-check" class="w-10 h-10 text-sky-400"></i>
         </div>
-        <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight">SECURECLOUD 2.0</h1>
+        <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight">SECURECLOUD</h1>
         <p class="text-slate-300 max-w-lg mt-2 text-sm">Automated Real-Time ML Threat Classification, 3-Second Base Breach Siren, Confidential Vaults & SOC Telemetry Engine.</p>
         <div class="flex gap-4 mt-6">
           <button onclick="openModal('login')" class="btn-cyber px-6 py-2.5 rounded-xl text-sm font-bold">Enter Security Portal</button>

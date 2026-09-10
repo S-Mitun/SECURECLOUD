@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Security & Compliance Report Generation Service
+SecureCloud - Security & Compliance Report Generation Service
 Exports security scans, audit logs, ML model training metrics, and storage reports in PDF, CSV, and JSON.
 """
 
@@ -41,7 +41,7 @@ class ReportService:
             })
 
         return {
-            "title": "SecureCloud 2.0 - Threat Intelligence & Security Scan Report",
+            "title": "SecureCloud - Threat Intelligence & Security Scan Report",
             "generated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
             "total_scans_analyzed": len(records),
             "active_ml_model": active_model.get("version", "N/A") if active_model else "N/A",

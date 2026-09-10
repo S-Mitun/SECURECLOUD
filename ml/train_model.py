@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Automated ML Model Training Pipeline
+SecureCloud - Automated ML Model Training Pipeline
 End-to-end training of multiple threat detection models, stratified splitting, model selection, and registry deployment.
 """
 

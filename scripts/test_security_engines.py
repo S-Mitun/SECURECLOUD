@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Comprehensive Verification Test Suite
+SecureCloud - Comprehensive Verification Test Suite
 Tests:
 1. 2FA Code Storage, Verification, and Rejection of invalid codes.
 2. Storage Quota Calculation and Persistence.
@@ -30,7 +30,7 @@ def run_tests():
     init_db()
     db = SessionLocal()
     print("=" * 70)
-    print("SECURECLOUD 2.0 - AUTOMATED VERIFICATION SUITE")
+    print("SECURECLOUD - AUTOMATED VERIFICATION SUITE")
     print("=" * 70)
 
     try:

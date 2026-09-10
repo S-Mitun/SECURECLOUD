@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - File Management & Format-Preserving Viewer API
+SecureCloud - File Management & Format-Preserving Viewer API
 Preserves byte-level integrity, supports real-time ML scanning, multi-format rendering, versioning, and quota controls.
 """
 

@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Pydantic Request & Response Schemas
+SecureCloud - Pydantic Request & Response Schemas
 """
 
 from typing import Dict, Any, List, Optional

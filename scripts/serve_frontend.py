@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Static Frontend Server
+SecureCloud - Static Frontend Server
 Serves the HTML/CSS/JS frontend cleanly on port 5500 with proper MIME types and CORS headers.
 """
 
@@ -33,7 +33,7 @@ class SecureCloudFrontendHandler(SimpleHTTPRequestHandler):
 def run_server(port: int = 5500, host: str = "127.0.0.1"):
     server_address = (host, port)
     httpd = HTTPServer(server_address, SecureCloudFrontendHandler)
-    print(f"SecureCloud 2.0 Frontend Server running on http://{host}:{port} (Serving: {FRONTEND_DIR})")
+    print(f"SecureCloud Frontend Server running on http://{host}:{port} (Serving: {FRONTEND_DIR})")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

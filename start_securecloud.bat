@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
-title SecureCloud 2.0 - Launcher
+title SecureCloud - Launcher
 
 echo ======================================================================
-echo                           SECURECLOUD 2.0
+echo                           SECURECLOUD
 echo                    "Secure Storage. Intelligent Protection."
 echo ======================================================================
 echo.
@@ -30,8 +30,8 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 :: 3. Launch SecureCloud Unified Server (Port 8000)
-echo [3/4] Starting SecureCloud 2.0 Unified Server (http://127.0.0.1:8000)...
-start "SecureCloud 2.0 Server" cmd /k "python backend\run.py"
+echo [3/4] Starting SecureCloud Unified Server (http://127.0.0.1:8000)...
+start "SecureCloud Server" cmd /k "python backend\run.py"
 
 :: 4. Health Check Polling before Browser Launch
 echo [4/4] Polling Backend Health Check (http://127.0.0.1:8000/health)...
@@ -41,7 +41,7 @@ set /a attempts+=1
 timeout /t 1 /nobreak >nul
 powershell -Command "try { $res = Invoke-RestMethod -Uri 'http://127.0.0.1:8000/health' -TimeoutSec 2; if ($res.status -eq 'healthy' -or $res.status -eq 'HEALTHY') { exit 0 } else { exit 1 } } catch { exit 1 }" >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    echo [SUCCESS] SecureCloud 2.0 Unified Service is ONLINE and HEALTHY!
+    echo [SUCCESS] SecureCloud Unified Service is ONLINE and HEALTHY!
     goto launch_browser
 )
 if %attempts% GEQ 20 (
@@ -54,7 +54,7 @@ goto health_loop
 :launch_browser
 echo.
 echo ======================================================================
-echo                 SECURECLOUD 2.0 IS RUNNING (ALL-IN-ONE)
+echo                 SECURECLOUD IS RUNNING (ALL-IN-ONE)
 echo ======================================================================
 echo   Unified Application Web Link : http://127.0.0.1:8000
 echo   Interactive API Swagger Docs : http://127.0.0.1:8000/docs
@@ -65,7 +65,7 @@ echo   Default Admin : admin@securecloud.com   / AdminPass123!
 echo   Default User  : analyst@securecloud.com / UserPass123!
 echo ======================================================================
 echo.
-echo Opening SecureCloud 2.0 in default web browser...
+echo Opening SecureCloud in default web browser...
 start http://127.0.0.1:8000
 
 echo Application is running. Close server window or run stop_securecloud.bat to shutdown.

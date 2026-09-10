@@ -1,5 +1,5 @@
 /**
- * SecureCloud 2.0 - Synthetic Military Security Base Breach Alarm Sound Engine
+ * SecureCloud - Synthetic Military Security Base Breach Alarm Sound Engine
  * Synthesizes an authentic 3-second dual-tone oscillating base breach klaxon/alarm using Web Audio API.
  * Automatically halts audio playback precisely after 3.0 seconds.
  */

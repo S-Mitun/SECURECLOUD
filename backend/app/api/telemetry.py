@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Telemetry & Prometheus Router
+SecureCloud - Telemetry & Prometheus Router
 """
 
 from fastapi import APIRouter, Depends, Response
@@ -24,7 +24,7 @@ def get_live_telemetry(db: Session = Depends(get_db)):
 def get_grafana_dashboard_json():
     """Provides pre-configured Grafana dashboard JSON schema."""
     return {
-        "title": "SecureCloud 2.0 - SOC Threat & VM Infrastructure Dashboard",
+        "title": "SecureCloud - SOC Threat & VM Infrastructure Dashboard",
         "timezone": "browser",
         "panels": [
             {"title": "CPU Utilization (%)", "type": "gauge", "targets": [{"expr": "securecloud_cpu_utilization_percent"}]},

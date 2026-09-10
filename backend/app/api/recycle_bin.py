@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Recycle Bin & Soft-Delete API
+SecureCloud - Recycle Bin & Soft-Delete API
 Prevents direct access to deleted files and provides safe restoration and permanent destruction.
 """
 

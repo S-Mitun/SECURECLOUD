@@ -1,5 +1,5 @@
 # ==============================================================================
-# SecureCloud 2.0 - Production Multi-Stage Dockerfile
+# SecureCloud - Production Multi-Stage Dockerfile
 # Serves both React Vite Frontend & FastAPI Backend in a Unified Container
 # ==============================================================================
 

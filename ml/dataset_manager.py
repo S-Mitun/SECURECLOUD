@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Dataset Management System
+SecureCloud - Dataset Management System
 Automated discovery, validation, cleaning, and statistics generation.
 """
 

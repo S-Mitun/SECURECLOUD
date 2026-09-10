@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Database & Storage Initialization Script
+SecureCloud - Database & Storage Initialization Script
 Initializes clean schema, storage directories, and default admin/user credentials.
 Includes automatic SQLite column migration.
 """

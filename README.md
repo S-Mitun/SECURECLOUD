@@ -17,7 +17,7 @@
 
 SecureCloud is deployed live as a unified, production-grade container on Railway Cloud. Everyone can access and evaluate both the **User Vault Portal** and the **Admin SOC Portal** using the live demo link below:
 
-### 🔗 **[Launch SecureCloud 2.0 Live Application](https://securecloud-app-production.up.railway.app)**
+### 🔗 **[Launch SecureCloud Live Application](https://securecloud-app-production.up.railway.app)**
 
 > **Production Gateway:** `https://securecloud-app-production.up.railway.app`  
 > **API Health Probe:** `https://securecloud-app-production.up.railway.app/health`  
@@ -55,7 +55,7 @@ SecureCloud is engineered with a modular, zero-trust architecture separating use
       [ React 18 + Vite SPA ]                                      [ FastAPI ASGI Gateway ]
       ├─ Cyber Dark SOC Theme                                      ├─ Strict Role-Based Access Control
       ├─ Canvas 2D Telemetry Waveforms                             ├─ Session-Bound JWT Auth + Dual-Admin Gate
-      ├─ Format-Preserving Document Viewers                        ├─ RESTful API Engine (v2.0)
+      ├─ Format-Preserving Document Viewers                        ├─ RESTful API Engine
       └─ Web Audio Military Alarm Siren                            └─ Prometheus Metrics (/metrics)
                  │                                                             │
                  └──────────────────────────────┬──────────────────────────────┘

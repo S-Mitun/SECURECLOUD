@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Unified Security Scanner & Decision Engine
+SecureCloud - Unified Security Scanner & Decision Engine
 Combines PE/EMBER LightGBM model inference, Static Security Analysis, and optional ClamAV.
 """
 

@@ -1,4 +1,4 @@
-# SecureCloud 2.0 - Development Server Runner
+# SecureCloud - Development Server Runner
 # Launches unified service in development mode.
 
 $ROOT_DIR = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
@@ -12,7 +12,7 @@ $serverProcess = Start-Process -FilePath "python" -ArgumentList "backend/run.py"
 $serverProcess.Id | Out-File -FilePath ".securecloud_backend.pid" -Force
 
 Write-Host "=================================================" -ForegroundColor Cyan
-Write-Host "SECURECLOUD 2.0 UNIFIED DEVELOPMENT SERVER" -ForegroundColor White
+Write-Host "SECURECLOUD UNIFIED DEVELOPMENT SERVER" -ForegroundColor White
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Unified Application Web Link:" -ForegroundColor Yellow

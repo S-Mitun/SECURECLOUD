@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Security Operations Center (SOC) Admin API
+SecureCloud - Security Operations Center (SOC) Admin API
 Enterprise real-time SOC management: User segregation, dual-admin vault access,
 multi-stage scanning, scan history, real Threat Intelligence Correlation Engine,
 real User Risk Profiling, IP Guard, Quarantine Vault, and Verified Trust Registry.

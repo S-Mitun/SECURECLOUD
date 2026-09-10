@@ -4,7 +4,7 @@
     "securecloud-threat-model-v1": {
       "version": "securecloud-threat-model-v1",
       "algorithm": "Random Forest",
-      "model_path": "C:\\Users\\Mitun S\\.gemini\\antigravity\\scratch\\SecureCloud_2.0\\ml\\models\\securecloud-threat-model-v1.joblib",
+      "model_path": "C:\\Users\\Mitun S\\.gemini\\antigravity\\scratch\\SecureCloud\\ml\\models\\securecloud-threat-model-v1.joblib",
       "model_filename": "securecloud-threat-model-v1.joblib",
       "registered_at": "31 Aug 2026 11:36:24",
       "dataset_name": "security_dataset.csv",
@@ -115,7 +115,7 @@
     "securecloud-threat-model-v2": {
       "version": "securecloud-threat-model-v2",
       "algorithm": "Random Forest",
-      "model_path": "C:\\Users\\Mitun S\\.gemini\\antigravity\\scratch\\SecureCloud_2.0\\ml\\models\\securecloud-threat-model-v2.joblib",
+      "model_path": "C:\\Users\\Mitun S\\.gemini\\antigravity\\scratch\\SecureCloud\\ml\\models\\securecloud-threat-model-v2.joblib",
       "model_filename": "securecloud-threat-model-v2.joblib",
       "registered_at": "31 Aug 2026 19:24:55",
       "dataset_name": "security_dataset.csv",

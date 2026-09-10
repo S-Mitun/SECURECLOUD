@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Heuristic Security Scanner
+SecureCloud - Heuristic Security Scanner
 Fast, deterministic rule-based threat analyzer for uploaded files.
 """
 

@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Confidential File Vault API
+SecureCloud - Confidential File Vault API
 AES-256-GCM authenticated encryption with 6-digit PIN/password key derivation.
 Ensures zero-knowledge privacy where administrators cannot view confidential contents.
 Includes Confidential Password Saves (Encrypted Key Recovery Vault).

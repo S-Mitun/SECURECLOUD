@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - IP Access Guard
+SecureCloud - IP Access Guard
 Verifies client IP addresses against active whitelist and blacklist rules.
 """
 

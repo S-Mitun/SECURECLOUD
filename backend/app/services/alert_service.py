@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Security Alert & Notification Service
+SecureCloud - Security Alert & Notification Service
 Manages threat alerts, SOC incidents, and broadcast notifications.
 """
 

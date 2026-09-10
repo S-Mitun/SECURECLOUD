@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Hybrid Threat Prediction Engine
+SecureCloud - Hybrid Threat Prediction Engine
 Combines real Machine Learning model inference, Static Heuristic Scanning, and Hash Intelligence.
 Updated with user-defined ML Threat probability thresholds:
 - > 20%: MALICIOUS

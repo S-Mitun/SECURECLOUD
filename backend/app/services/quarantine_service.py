@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Threat Quarantine Service
+SecureCloud - Threat Quarantine Service
 Isolates malicious files in secure quarantine vault, preventing direct execution or user access.
 """
 

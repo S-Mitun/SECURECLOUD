@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Optional ClamAV Antivirus Scanner
+SecureCloud - Optional ClamAV Antivirus Scanner
 Checks local ClamAV daemon on port 3310 or clamscan binary in system PATH.
 If unavailable, clearly reports 'ClamAV engine unavailable' without faking scan results.
 """

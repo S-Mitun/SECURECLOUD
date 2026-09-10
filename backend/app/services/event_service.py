@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Centralized Security Event Telemetry Service
+SecureCloud - Centralized Security Event Telemetry Service
 Normalizes and logs all operational, authentication, file lifecycle, and admin events.
 Feeds directly into the Threat Intelligence Correlation Engine and User Risk Profiling Engine.
 """

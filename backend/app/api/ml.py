@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Machine Learning & AI Threat Training API
+SecureCloud - Machine Learning & AI Threat Training API
 Provides training triggers, real-time training progress, model registry, metrics, feature importance, and drift detection.
 """
 

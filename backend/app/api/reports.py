@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Security, ML, and Audit Reports API
+SecureCloud - Security, ML, and Audit Reports API
 Exports comprehensive threat analytics and SOC audit documents in PDF, CSV, and JSON.
 """
 
@@ -57,7 +57,7 @@ def export_ml_training_report(
         raise HTTPException(status_code=404, detail="No active model report available.")
 
     return {
-        "title": "SecureCloud 2.0 - ML Threat Classification Training Report",
+        "title": "SecureCloud - ML Threat Classification Training Report",
         "active_model_version": active_info.get("version"),
         "algorithm": active_info.get("algorithm"),
         "training_dataset": active_info.get("dataset_name"),

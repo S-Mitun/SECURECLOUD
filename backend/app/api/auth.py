@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Centralized Authentication Router
+SecureCloud - Centralized Authentication Router
 Enterprise RBAC with User/Admin Separation, Strict 2FA Verification Code Storage & Confirmation,
 and Admin Config PIN Protection.
 """

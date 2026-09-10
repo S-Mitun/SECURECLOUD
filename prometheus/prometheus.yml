@@ -1,4 +1,4 @@
-# SecureCloud 2.0 - Prometheus Scraper Configuration
+# SecureCloud - Prometheus Scraper Configuration
 global:
   scrape_interval: 5s
   evaluation_interval: 5s

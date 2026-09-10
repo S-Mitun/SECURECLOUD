@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Security Audit Logging Service
+SecureCloud - Security Audit Logging Service
 Structured audit records for every security and platform action.
 """
 

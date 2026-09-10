@@ -1,8 +1,8 @@
-# SecureCloud 2.0 - PowerShell One-Click Launcher
-# Starts SecureCloud 2.0 Unified Server, runs health check, and launches default browser.
+# SecureCloud - PowerShell One-Click Launcher
+# Starts SecureCloud Unified Server, runs health check, and launches default browser.
 
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "                          SECURECLOUD 2.0" -ForegroundColor White
+Write-Host "                          SECURECLOUD" -ForegroundColor White
 Write-Host "                   'Secure Storage. Intelligent Protection.'" -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host ""
@@ -38,7 +38,7 @@ for ($i = 1; $i -le 20; $i++) {
         $res = Invoke-RestMethod -Uri "http://127.0.0.1:8000/health" -TimeoutSec 2 -ErrorAction SilentlyContinue
         if ($res.status -eq "healthy" -or $res.status -eq "HEALTHY") {
             $healthy = $true
-            Write-Host "[SUCCESS] SecureCloud 2.0 Service is ONLINE and HEALTHY!" -ForegroundColor Green
+            Write-Host "[SUCCESS] SecureCloud Service is ONLINE and HEALTHY!" -ForegroundColor Green
             break
         }
     } catch {}
@@ -47,7 +47,7 @@ for ($i = 1; $i -le 20; $i++) {
 
 Write-Host ""
 Write-Host "======================================================================" -ForegroundColor Green
-Write-Host "                 SECURECLOUD 2.0 IS RUNNING (ALL-IN-ONE)" -ForegroundColor White
+Write-Host "                 SECURECLOUD IS RUNNING (ALL-IN-ONE)" -ForegroundColor White
 Write-Host "======================================================================" -ForegroundColor Green
 Write-Host "  Unified Web Application : http://127.0.0.1:8000" -ForegroundColor Cyan
 Write-Host "  Interactive API Docs    : http://127.0.0.1:8000/docs" -ForegroundColor DarkCyan
@@ -58,7 +58,7 @@ Write-Host "  Default Admin : admin@securecloud.com   / AdminPass123!" -Foregrou
 Write-Host "  Default User  : analyst@securecloud.com / UserPass123!" -ForegroundColor Yellow
 Write-Host "======================================================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Opening SecureCloud 2.0 in default web browser..." -ForegroundColor Green
+Write-Host "Opening SecureCloud in default web browser..." -ForegroundColor Green
 Start-Process "http://127.0.0.1:8000"
 
 Write-Host "Press Ctrl+C or run stop_securecloud.bat to shutdown services." -ForegroundColor DarkGray

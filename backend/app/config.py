@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Configuration Settings
+SecureCloud - Configuration Settings
 """
 
 import os

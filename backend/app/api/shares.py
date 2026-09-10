@@ -3,7 +3,7 @@
 _VIEW_DEBOUNCE_CACHE = {}
 
 """
-SecureCloud 2.0 - Shared Links & Public Access API
+SecureCloud - Shared Links & Public Access API
 Expiration countdowns, password protection, global revocation, and format-preserving public views.
 """
 

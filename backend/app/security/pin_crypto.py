@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Confidential File Vault Cryptography Engine
+SecureCloud - Confidential File Vault Cryptography Engine
 PBKDF2-HMAC-SHA256 key derivation and AES-GCM-256 authenticated encryption.
 """
 

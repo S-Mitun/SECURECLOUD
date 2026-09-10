@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Model Drift & Monitoring Engine
+SecureCloud - Model Drift & Monitoring Engine
 Tracks incoming feature distribution changes vs training baseline and triggers retraining alerts.
 """
 

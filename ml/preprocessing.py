@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - ML Data Preprocessing Pipeline
+SecureCloud - ML Data Preprocessing Pipeline
 Scikit-learn ColumnTransformer and Pipeline for consistent training and inference transformations.
 """
 

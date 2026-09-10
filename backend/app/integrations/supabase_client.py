@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Supabase Integration Client
+SecureCloud - Supabase Integration Client
 Provides cloud authentication sync, remote profile replication, and Supabase health inspection.
 """
 

@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Server Runner
+SecureCloud - Server Runner
 """
 
 import uvicorn
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     default_host = "0.0.0.0" if (is_prod or os.getenv("PORT")) else "127.0.0.1"
     host = os.getenv("HOST", default_host)
     
-    print(f"Starting SecureCloud 2.0 on http://{host}:{port} (production={is_prod})")
+    print(f"Starting SecureCloud on http://{host}:{port} (production={is_prod})")
     uvicorn.run(
         "backend.app.main:app",
         host=host,

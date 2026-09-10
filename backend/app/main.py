@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - FastAPI Application Root
+SecureCloud - FastAPI Application Root
 "Secure Storage. Intelligent Protection."
 """
 
@@ -30,7 +30,7 @@ from backend.app.api.notifications import router as notifications_router
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="SecureCloud 2.0 - Threat Detection & Security Intelligence Engine",
+    title="SecureCloud - Threat Detection & Security Intelligence Engine",
     description="Production-grade cloud storage with integrated ML threat classification and SOC intelligence.",
     version="2.0.0"
 )
@@ -99,8 +99,8 @@ async def root_index():
 def health_check():
     return {
         "status": "healthy",
-        "service": "SecureCloud 2.0",
-        "app": "SecureCloud 2.0",
+        "service": "SecureCloud",
+        "app": "SecureCloud",
         "ml_engine": "ONLINE",
         "threat_engine": "ONLINE",
         "security_policy": "STRICT_ROLE_ISOLATION"

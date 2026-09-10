@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - ML Model Registry & Version Management
+SecureCloud - ML Model Registry & Version Management
 Maintains model versions, performance metrics, and active production model reference.
 """
 

@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
-title SecureCloud 2.0 - Graceful Shutdown
+title SecureCloud - Graceful Shutdown
 
 echo ======================================================================
-echo          SECURECLOUD 2.0 - TARGETED GRACEFUL SHUTDOWN
+echo          SECURECLOUD - TARGETED GRACEFUL SHUTDOWN
 echo ======================================================================
 echo.
 
@@ -37,7 +37,7 @@ powershell -Command "try { $pids = (Get-NetTCPConnection -LocalPort 5500 -ErrorA
 
 echo.
 echo ======================================================================
-echo [SUCCESS] SecureCloud 2.0 services have been stopped.
+echo [SUCCESS] SecureCloud services have been stopped.
 echo           Unrelated applications and system processes were unaffected.
 echo ======================================================================
 echo.

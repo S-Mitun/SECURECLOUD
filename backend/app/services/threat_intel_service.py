@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Threat Intelligence Correlation Engine
+SecureCloud - Threat Intelligence Correlation Engine
 Real event-driven correlation pipeline matching SecurityEvents against local/external IOC indicators.
 ZERO RANDOM / FAKE DATA: All correlations, indicators, scores, and evidence are deterministically calculated.
 """

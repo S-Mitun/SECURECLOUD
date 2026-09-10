@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Security Feature Engineering Engine
+SecureCloud - Security Feature Engineering Engine
 Extracts 30+ static security features from raw bytes and files without executing code.
 """
 

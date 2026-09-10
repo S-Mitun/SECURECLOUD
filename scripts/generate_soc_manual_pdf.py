@@ -117,7 +117,7 @@ def build_soc_manual():
     # Title Banner Block
     header_data = [
         [
-            Paragraph("SECURECLOUD 2.0 ENTERPRISE SOC MANUAL", title_style),
+            Paragraph("SECURECLOUD ENTERPRISE SOC MANUAL", title_style),
         ],
         [
             Paragraph("Threat Intelligence Correlation • SOAR Policies • User Risk Matrix • Incident Playbooks", subtitle_style)
@@ -281,7 +281,7 @@ def build_soc_manual():
 
     # Summary Footer Table
     footer_data = [
-        [Paragraph("<b>SecureCloud 2.0 SOC Operational Acceptance</b> • Generated for Security Engineering & Compliance", ParagraphStyle('Foot', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor("#64748b"), alignment=TA_CENTER))]
+        [Paragraph("<b>SecureCloud SOC Operational Acceptance</b> • Generated for Security Engineering & Compliance", ParagraphStyle('Foot', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor("#64748b"), alignment=TA_CENTER))]
     ]
     t_foot = Table(footer_data, colWidths=[540])
     t_foot.setStyle(TableStyle([

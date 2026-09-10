@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Master Orchestration and Startup Script
+SecureCloud - Master Orchestration and Startup Script
 "Secure Storage. Intelligent Protection."
 """
 
@@ -21,7 +21,7 @@ from scripts.generate_dataset import generate_security_dataset
 
 def bootstrap_and_start():
     print("=" * 70)
-    print("SECURECLOUD 2.0")
+    print("SECURECLOUD")
     print("=" * 70)
 
     # 1. Initialize DB & Storage
@@ -46,7 +46,7 @@ def bootstrap_and_start():
 
     # 4. Start Server
     print("\n" + "=" * 70)
-    print("STARTING SECURECLOUD 2.0 SERVER")
+    print("STARTING SECURECLOUD SERVER")
     print("Application URL: http://127.0.0.1:8000")
     print("Prometheus Metrics: http://127.0.0.1:8000/metrics")
     print("Default Admin Credentials: admin@securecloud.com / AdminPass123!")

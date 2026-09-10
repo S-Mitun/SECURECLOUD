@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Notifications & Real-Time Alerts API
+SecureCloud - Notifications & Real-Time Alerts API
 """
 
 from datetime import datetime, timedelta

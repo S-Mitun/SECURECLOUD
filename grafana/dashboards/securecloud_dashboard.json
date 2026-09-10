@@ -102,6 +102,6 @@
   "style": "dark",
   "tags": ["securecloud", "soc", "security", "telemetry"],
   "time": { "from": "now-1h", "to": "now" },
-  "title": "SecureCloud 2.0 - Security Operations Center & VM Monitor",
+  "title": "SecureCloud - Security Operations Center & VM Monitor",
   "version": 1
 }

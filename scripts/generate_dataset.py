@@ -1,5 +1,5 @@
 """
-SecureCloud 2.0 - Security Dataset Generator
+SecureCloud - Security Dataset Generator
 Generates a realistic 12,000-record cybersecurity threat dataset with authentic feature correlations.
 """
 

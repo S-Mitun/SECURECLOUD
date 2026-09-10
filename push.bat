@@ -1,6 +1,6 @@
 @echo off
 echo ===================================================
-echo   SecureCloud 2.0 - GitHub Push Utility
+echo   SecureCloud - GitHub Push Utility
 echo ===================================================
 set "PATH=C:\Users\Mitun S\AppData\Local\Programs\Git\cmd;C:\Users\Mitun S\AppData\Local\Programs\Git\mingw64\bin;%PATH%"
 
