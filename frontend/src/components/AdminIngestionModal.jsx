@@ -41,13 +41,14 @@ export function AdminIngestionModal({ onUpdate }) {
   const filename = modalData.filename || details?.filename || 'File';
   const targetUsername = modalData.target_username || details?.user?.username || 'Target User';
   const currentStatus = details?.security_status || modalData.security_status || 'UNKNOWN';
-  const currentScore = details?.threat_score ?? modalData.threat_score ?? 0;
+  const currentScore = Number(details?.threat_score ?? modalData.threat_score ?? 0);
+  const healthScore = Number(details?.health_score ?? Math.max(0, Math.min(100, Math.round((100 - currentScore) * 10) / 10))).toFixed(1);
   
   // Intrinsic File Payload Health Determination
-  const isTrustedClean = details?.model_version?.includes('Trust Registry') || (currentStatus === 'CLEAN' && currentScore === 0);
+  const isTrustedClean = details?.model_version?.includes('Trust Registry');
   let intrinsicPayloadHealth = 'CLEAN';
   let intrinsicBadgeClass = 'bg-emerald-950 text-emerald-300 border-emerald-500/50';
-  let intrinsicDesc = 'File payload is verified clean and contains zero malicious macros, PE sections, or high-entropy obfuscations.';
+  let intrinsicDesc = `File payload is healthy (${healthScore}% Intrinsic Health) with negligible heuristic threat vector flags.`;
 
   if (isTrustedClean) {
     intrinsicPayloadHealth = 'VERIFIED CLEAN (TRUSTED)';
@@ -174,13 +175,19 @@ export function AdminIngestionModal({ onUpdate }) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                <div className="flex items-center gap-4 self-end sm:self-center shrink-0">
+                  <div className="text-right font-mono">
+                    <div className="text-[10px] text-slate-400">Intrinsic Health Score</div>
+                    <div className="text-lg font-black text-emerald-400">
+                      {healthScore}%
+                    </div>
+                  </div>
                   <div className="text-right font-mono">
                     <div className="text-[10px] text-slate-400">Intrinsic ML Threat Score</div>
                     <div className={`text-lg font-black ${
                       currentScore >= 70 ? 'text-rose-400' : currentScore >= 25 ? 'text-amber-400' : 'text-emerald-400'
                     }`}>
-                      {currentScore}%
+                      {currentScore.toFixed(1)}%
                     </div>
                   </div>
                   <SecurityBadge status={currentStatus} score={currentScore} />
@@ -210,10 +217,10 @@ export function AdminIngestionModal({ onUpdate }) {
                 <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5 font-mono">
                   <Terminal className="w-4 h-4 text-sky-400" /> Static Heuristic Explanations & Rule Matches
                 </h4>
-                {isTrustedClean || currentStatus === 'CLEAN' ? (
+                {details?.model_version?.includes('Trust Registry') ? (
                   <div className="text-xs text-emerald-400 flex items-center gap-2 p-2.5 bg-emerald-950/30 rounded-lg border border-emerald-500/30 font-mono">
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    Cryptographically verified safe asset (0.0% threat). Verified Clean in Trust Registry.
+                    Cryptographically verified safe asset (100% Intrinsic Health). Verified Clean in Trust Registry.
                   </div>
                 ) : details?.explanations?.length ? (
                   <ul className="space-y-1.5 text-xs text-slate-300">
@@ -227,7 +234,7 @@ export function AdminIngestionModal({ onUpdate }) {
                 ) : (
                   <div className="text-xs text-emerald-400 flex items-center gap-2 p-2.5 bg-emerald-950/30 rounded-lg border border-emerald-500/30 font-mono">
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    Zero malicious heuristic signatures or anomalous section entropy detected.
+                    Intrinsic static heuristics and LightGBM model evaluated threat risk at {currentScore.toFixed(1)}% (Intrinsic Health: {healthScore}%).
                   </div>
                 )}
               </div>

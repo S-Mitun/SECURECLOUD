@@ -39,8 +39,9 @@ export function SecurityDetailsModal({ onUpdate }) {
   const targetFileId = modalData.id || modalData.file_id;
   const filename = modalData.filename || details?.filename || 'File';
   const currentStatus = details?.security_status || modalData.security_status || 'UNKNOWN';
-  const currentScore = details?.threat_score ?? modalData.threat_score ?? 0;
-  const isCleanStatus = currentStatus === 'CLEAN' || currentScore === 0 || details?.security_status === 'CLEAN' || details?.model_version?.includes('Trust Registry');
+  const currentScore = Number(details?.threat_score ?? modalData.threat_score ?? 0);
+  const healthScore = Number(details?.health_score ?? Math.max(0, Math.min(100, Math.round((100 - currentScore) * 10) / 10))).toFixed(1);
+  const isCleanStatus = (currentStatus === 'CLEAN' && currentScore < 20) || details?.model_version?.includes('Trust Registry');
   const isThreat = !isCleanStatus && (currentStatus === 'SUSPICIOUS' || currentStatus === 'MALICIOUS' || currentScore >= 20);
 
   const handleOverrideClean = async () => {
@@ -71,21 +72,22 @@ export function SecurityDetailsModal({ onUpdate }) {
       if (onUpdate) onUpdate();
       window.dispatchEvent(new CustomEvent('files:updated'));
     } catch (err) {
-      showToast(err.message || 'Failed to purge threat file.', 'error');
+      showToast(err.message || 'Failed to purge file.', 'error');
     } finally {
       setActionLoading(false);
     }
   };
 
-  const finalVerdict = isCleanStatus ? '✓ VERIFIED CLEAN FILE' : (details?.verdict || details?.final_verdict || (
-    currentStatus === 'MALICIOUS' ? 'MALICIOUS FILE' :
-    currentStatus === 'SUSPICIOUS' ? 'SUSPICIOUS SCRIPT / FILE' :
-    'VERIFIED CLEAN FILE'
-  ));
+  const finalVerdict = details?.final_verdict || (
+    isCleanStatus ? '✓ VERIFIED CLEAN FILE' :
+    currentStatus === 'MALICIOUS' ? '✕ MALICIOUS FILE DETECTED' :
+    currentStatus === 'SUSPICIOUS' ? '⚠ SUSPICIOUS FILE HEURISTICS' :
+    '✓ CLEAN FILE'
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-      <div className="glass-card max-w-3xl w-full p-6 border border-slate-700 shadow-2xl relative max-h-[90vh] flex flex-col animate-scale-up">
+      <div className="glass-card max-w-2xl w-full p-6 border border-slate-700 shadow-2xl relative max-h-[90vh] flex flex-col animate-scale-up">
         <button
           onClick={closeModal}
           className="absolute top-4 right-4 text-slate-400 hover:text-white"
@@ -94,22 +96,25 @@ export function SecurityDetailsModal({ onUpdate }) {
         </button>
 
         <div className="flex items-center gap-3 mb-4 shrink-0">
-          <div className="p-2.5 rounded-xl bg-sky-950/80 border border-sky-500/40 text-sky-400">
-            <Cpu className="w-6 h-6" />
+          <div className="p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sky-400">
+            <Shield className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">ML Threat Intelligence Breakdown</h3>
-            <p className="text-xs text-slate-400">
-              Structural PE, Static Heuristics & LightGBM Inference for <strong>{filename}</strong>
-            </p>
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              Security Telemetry & Threat Vector Inspection
+              <span className="px-2 py-0.5 bg-slate-800 text-slate-300 text-[10px] rounded font-mono border border-slate-700">
+                AI / EMBER MODEL
+              </span>
+            </h3>
+            <p className="text-xs text-slate-400">Deep structural analysis for <strong>{filename}</strong></p>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto pr-1 space-y-4">
           {loading ? (
-            <div className="py-16 text-center text-slate-400 text-xs font-mono">
+            <div className="py-12 text-center text-slate-400 text-xs font-mono">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-sky-400" />
-              ANALYZING ML VECTOR FEATURES & STATIC HEURISTICS...
+              RETRIEVING SECURITY TELEMETRY...
             </div>
           ) : (
             <>
@@ -133,17 +138,22 @@ export function SecurityDetailsModal({ onUpdate }) {
                     {finalVerdict}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
+                  <div className="text-right font-mono">
+                    <div className="text-[10px] text-slate-400">Intrinsic Health Score</div>
+                    <div className="text-base font-bold text-emerald-400">
+                      {healthScore}%
+                    </div>
+                  </div>
                   <div className="text-right font-mono">
                     <div className="text-[10px] text-slate-400">ML Threat Probability</div>
                     <div className={`text-base font-bold ${
-                      isCleanStatus ? 'text-emerald-400' :
                       currentScore > 50 ? 'text-red-400' : currentScore > 20 ? 'text-amber-400' : 'text-emerald-400'
                     }`}>
-                      {isCleanStatus ? 0 : currentScore}%
+                      {currentScore.toFixed(1)}%
                     </div>
                   </div>
-                  <SecurityBadge status={isCleanStatus ? 'CLEAN' : currentStatus} score={isCleanStatus ? 0 : currentScore} />
+                  <SecurityBadge status={isCleanStatus ? 'CLEAN' : currentStatus} score={currentScore} />
                 </div>
               </div>
 
@@ -186,10 +196,10 @@ export function SecurityDetailsModal({ onUpdate }) {
                 <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5 font-mono">
                   <Terminal className="w-4 h-4 text-sky-400" /> Heuristic Explanations & Rule Matches
                 </h4>
-                {isCleanStatus ? (
+                {details?.model_version?.includes('Trust Registry') ? (
                   <div className="text-xs text-emerald-400 flex items-center gap-2 p-2.5 bg-emerald-950/30 rounded-lg border border-emerald-500/30 font-mono">
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    Cryptographically verified safe asset (0.0% threat). Verified Clean in Trust Registry.
+                    Cryptographically verified safe asset (100% Intrinsic Health). Verified Clean in Trust Registry.
                   </div>
                 ) : details?.explanations?.length ? (
                   <ul className="space-y-1.5 text-xs text-slate-300">
@@ -203,39 +213,42 @@ export function SecurityDetailsModal({ onUpdate }) {
                 ) : (
                   <div className="text-xs text-emerald-400 flex items-center gap-2 p-2.5 bg-emerald-950/30 rounded-lg border border-emerald-500/30 font-mono">
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    No malicious heuristic signatures or anomalous section entropy detected.
+                    Intrinsic static heuristics and LightGBM model evaluated threat risk at {currentScore.toFixed(1)}% (Intrinsic Health: {healthScore}%).
                   </div>
                 )}
               </div>
 
               {/* ML Probability Class Distribution */}
-              {details?.latest_scan?.ml_probabilities && (
-                <div className="glass-card p-4 border border-slate-800">
-                  <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 font-mono">
-                    Model Classification Confidence
-                  </h4>
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <div className="text-[10px] text-slate-400 font-mono">CLEAN CONFIDENCE</div>
-                      <div className="text-sm font-bold text-emerald-400 mt-1">
-                        {details.latest_scan.ml_probabilities.CLEAN ?? 0}%
+              {(details?.ml_probabilities || details?.latest_scan?.ml_probabilities) && (() => {
+                const probs = details?.ml_probabilities || details?.latest_scan?.ml_probabilities || {};
+                return (
+                  <div className="glass-card p-4 border border-slate-800">
+                    <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 font-mono">
+                      Model Classification Confidence
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <div className="text-[10px] text-slate-400 font-mono">CLEAN / HEALTHY</div>
+                        <div className="text-sm font-bold text-emerald-400 mt-1 font-mono">
+                          {probs.CLEAN ?? healthScore}%
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <div className="text-[10px] text-slate-400 font-mono">SUSPICIOUS SCORE</div>
-                      <div className="text-sm font-bold text-amber-400 mt-1">
-                        {details.latest_scan.ml_probabilities.SUSPICIOUS ?? 0}%
+                      <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <div className="text-[10px] text-slate-400 font-mono">SUSPICIOUS ANOMALY</div>
+                        <div className="text-sm font-bold text-amber-400 mt-1 font-mono">
+                          {probs.SUSPICIOUS ?? 0}%
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <div className="text-[10px] text-slate-400 font-mono">MALICIOUS SCORE</div>
-                      <div className="text-sm font-bold text-red-400 mt-1">
-                        {details.latest_scan.ml_probabilities.MALICIOUS ?? 0}%
+                      <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <div className="text-[10px] text-slate-400 font-mono">MALICIOUS VECTOR</div>
+                        <div className="text-sm font-bold text-red-400 mt-1 font-mono">
+                          {probs.MALICIOUS ?? 0}%
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </>
           )}
         </div>
