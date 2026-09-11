@@ -348,6 +348,13 @@ def get_user_wise_grouped_files(
     users = db.query(User).order_by(User.role.desc(), User.created_at.desc()).all()
     grouped_res = []
 
+    # Prefetch verified clean artifacts
+    trusted_records = db.query(VerifiedCleanArtifact.sha256, VerifiedCleanArtifact.original_filename).filter(
+        VerifiedCleanArtifact.verification_status == "VERIFIED_CLEAN"
+    ).all()
+    trusted_hashes = {r[0] for r in trusted_records if r[0]}
+    trusted_names = {r[1] for r in trusted_records if r[1]}
+
     for u in users:
         metrics = get_user_storage_metrics(db, u.id)
         files = db.query(FileRecord).filter(
@@ -364,6 +371,18 @@ def get_user_wise_grouped_files(
                 (SecurityScan.file_id == f.id) | (SecurityScan.file_hash == f.file_hash)
             ).order_by(SecurityScan.scanned_at.desc()).first()
 
+            is_trusted = (f.file_hash in trusted_hashes or f.filename in trusted_names or (latest_scan and latest_scan.model_version and "Trust Registry" in latest_scan.model_version))
+            if is_trusted:
+                effective_score = 0.0
+                effective_status = "CLEAN"
+                final_verdict = "✓ VERIFIED CLEAN FILE"
+                model_ver = "Trust Registry Override"
+            else:
+                effective_score = round(float(f.threat_score if f.threat_score is not None else (latest_scan.threat_score if latest_scan else 0.0)), 1)
+                effective_status = f.security_status or ("CLEAN" if effective_score < 20.0 else ("SUSPICIOUS" if effective_score < 70.0 else "MALICIOUS"))
+                final_verdict = latest_scan.final_verdict if (latest_scan and latest_scan.final_verdict) else ("✓ VERIFIED CLEAN" if effective_score < 20 else "MALICIOUS FILE")
+                model_ver = latest_scan.model_version if latest_scan else "LightGBM / EMBER2024"
+
             file_list.append({
                 "id": f.id,
                 "filename": f.filename,
@@ -374,11 +393,11 @@ def get_user_wise_grouped_files(
                 "mime_type": f.mime_type,
                 "extension": f.extension,
                 "is_confidential": f.is_confidential,
-                "threat_score": f.threat_score or 0.0,
-                "security_status": f.security_status or "CLEAN",
-                "final_verdict": latest_scan.final_verdict if latest_scan else ("✓ VERIFIED CLEAN" if (f.threat_score or 0) < 20 else "MALICIOUS FILE"),
-                "ml_prediction": latest_scan.ml_prediction if latest_scan else f.security_status,
-                "model_version": latest_scan.model_version if latest_scan else "LightGBM / EMBER2024",
+                "threat_score": effective_score,
+                "security_status": effective_status,
+                "final_verdict": final_verdict,
+                "ml_prediction": latest_scan.ml_prediction if latest_scan else effective_status,
+                "model_version": model_ver,
                 "last_scanned_at": to_ist(latest_scan.scanned_at) if latest_scan else to_ist(f.last_scanned_at),
                 "created_at": to_ist(f.created_at)
             })
@@ -407,18 +426,28 @@ def get_specific_user_files(
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    """Fetches segregated files for a specific user."""
+    """Fetches segregated files for a specific user with synchronized trust registry validation."""
     target_user = db.query(User).filter(User.id == user_id).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
+
+    trusted_records = db.query(VerifiedCleanArtifact.sha256, VerifiedCleanArtifact.original_filename).filter(
+        VerifiedCleanArtifact.verification_status == "VERIFIED_CLEAN"
+    ).all()
+    trusted_hashes = {r[0] for r in trusted_records if r[0]}
+    trusted_names = {r[1] for r in trusted_records if r[1]}
 
     files = db.query(FileRecord).filter(
         FileRecord.user_id == user_id,
         FileRecord.is_in_recycle_bin == False
     ).order_by(FileRecord.created_at.desc()).all()
 
-    return [
-        {
+    result = []
+    for f in files:
+        is_trusted = (f.file_hash in trusted_hashes or f.filename in trusted_names)
+        effective_score = 0.0 if is_trusted else round(float(f.threat_score or 0.0), 1)
+        effective_status = "CLEAN" if (is_trusted or effective_score < 20.0) else (f.security_status or "CLEAN")
+        result.append({
             "id": f.id,
             "file_id": f.id,
             "user_id": f.user_id,
@@ -430,13 +459,13 @@ def get_specific_user_files(
             "mime_type": f.mime_type,
             "extension": f.extension,
             "is_confidential": f.is_confidential,
-            "security_status": f.security_status,
-            "threat_score": f.threat_score,
+            "security_status": effective_status,
+            "threat_score": effective_score,
             "created_at": to_ist(f.created_at),
             "last_scanned_at": to_ist(f.last_scanned_at)
-        }
-        for f in files
-    ]
+        })
+
+    return result
 
 @router.put("/users/{user_id}/quota")
 def update_user_storage_quota(

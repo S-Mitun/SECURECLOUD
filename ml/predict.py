@@ -177,8 +177,10 @@ class ThreatPredictor:
             explanations.append("Contains automated PowerShell execution markers")
         if features.get("vba_macro_indicator"):
             explanations.append("Office macro execution directives present")
-        if features.get("file_entropy", 0) > 7.3:
-            explanations.append(f"High file entropy ({features['file_entropy']:.2f}/8.00) indicates packed/obfuscated code")
+        ext = os.path.splitext(effective_filename)[1].lower()
+        is_binary_exec = ext in [".exe", ".dll", ".bin", ".sys", ".scr", ".com", ".elf", ".iso"]
+        if is_binary_exec and features.get("file_entropy", 0) > 7.4:
+            explanations.append(f"High file entropy ({features['file_entropy']:.2f}/8.00) indicates packed/obfuscated binary code")
         if features.get("suspicious_string_count", 0) > 0:
             explanations.append(f"{features['suspicious_string_count']} suspicious security string patterns matched")
         for r in triggered_rules:

@@ -28,6 +28,11 @@ export function FileViewerModal() {
     setImageError(false);
 
     if (activeModal === 'fileViewer' && modalData) {
+      const targetId = modalData.id || modalData.file_id;
+      const fn = modalData.filename || modalData.original_filename || '';
+      const ext = (fn.substring(fn.lastIndexOf('.')) || '').toLowerCase();
+      const isMedia = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico', '.mp3', '.wav', '.ogg', '.mp4', '.webm', '.mov', '.avi'].includes(ext);
+
       if (modalData.is_unlocked && modalData.viewPayload) {
         // Direct in-memory decrypted view payload
         const payload = modalData.viewPayload;
@@ -36,27 +41,31 @@ export function FileViewerModal() {
           setActiveSheet(payload.sheet_names[0]);
         }
         if (payload.stream_url) {
-          if (payload.stream_url.startsWith('data:')) {
-            // Convert data URI to real in-memory Blob URL for perfect browser & iframe support
-            try {
-              fetch(payload.stream_url)
-                .then((r) => r.blob())
-                .then((blob) => {
-                  const bUrl = URL.createObjectURL(blob);
-                  currentBlob = bUrl;
-                  setBlobStreamUrl(bUrl);
-                })
-                .catch(() => setBlobStreamUrl(payload.stream_url));
-            } catch {
-              setBlobStreamUrl(payload.stream_url);
-            }
-          } else {
-            setBlobStreamUrl(payload.stream_url);
-          }
+          setBlobStreamUrl(payload.stream_url);
         }
         setLoading(false);
-      } else if (modalData.id || modalData.file_id) {
-        loadFile(modalData.id || modalData.file_id);
+      } else if (isMedia) {
+        // Instant native media streaming - eliminate all blocking load delays
+        const streamUrl = fileApi.getStreamUrl(targetId);
+        setViewData({
+          format: 'STREAMABLE_MEDIA',
+          filename: fn,
+          stream_url: streamUrl,
+          file_size: modalData.file_size || 0
+        });
+        setBlobStreamUrl(streamUrl);
+        setLoading(false);
+
+        // Fetch deep telemetry / metadata non-blockingly in background
+        fileApi.viewFile(targetId)
+          .then(data => {
+            if (data && data.format !== 'CONFIDENTIAL_LOCKED') {
+              setViewData(prev => ({ ...prev, ...data }));
+            }
+          })
+          .catch(() => {});
+      } else if (targetId) {
+        loadFile(targetId);
       }
     } else {
       setViewData(null);
@@ -84,27 +93,8 @@ export function FileViewerModal() {
       if (data && data.sheet_names && data.sheet_names.length > 0) {
         setActiveSheet(data.sheet_names[0]);
       }
-
-      // If it's a streamable media (PDF, Image, Video, Audio), fetch blob with Bearer token
-      const filename = data?.filename || modalData.filename || modalData.original_filename || '';
-      const ext = (filename.substring(filename.lastIndexOf('.')) || '').toLowerCase();
-      const isMedia = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.mp3', '.wav', '.ogg', '.mp4', '.webm'].includes(ext) || data.format === 'STREAMABLE_MEDIA';
-
-      if (isMedia) {
-        try {
-          const token = (sessionStorage.getItem('sc_token') || localStorage.getItem('sc_token'));
-          const streamUrl = fileApi.getStreamUrl(fileId);
-          const res = await fetch(streamUrl, {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-          });
-          if (res.ok) {
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            setBlobStreamUrl(url);
-          }
-        } catch (streamErr) {
-          console.warn("Direct blob stream fetch notice:", streamErr);
-        }
+      if (data && data.stream_url) {
+        setBlobStreamUrl(data.stream_url);
       }
     } catch (err) {
       setError(err.message || 'Failed to render file preview.');

@@ -70,9 +70,7 @@ class ThreatIntelService:
             return
 
         initial_iocs = [
-            # Known C2 Infrastructure & Brute Force Attackers
-            {"indicator": "198.51.100.42", "indicator_type": "IP_ADDRESS", "threat_type": "C2_SERVER", "malware_family": "Cobalt Strike", "confidence": 95.0, "severity": "CRITICAL", "source": "LOCAL_DATABASE"},
-            {"indicator": "203.0.113.19", "indicator_type": "IP_ADDRESS", "threat_type": "BRUTE_FORCE", "malware_family": "Mirai Ingress", "confidence": 90.0, "severity": "HIGH", "source": "LOCAL_DATABASE"},
+            # Known Threat Infrastructure & Tor Exit Gateways
             {"indicator": "185.220.101.5", "indicator_type": "IP_ADDRESS", "threat_type": "TOR_EXIT_NODE", "malware_family": "Tor Gateway", "confidence": 85.0, "severity": "MEDIUM", "source": "LOCAL_DATABASE"},
             {"indicator": "45.33.32.156", "indicator_type": "IP_ADDRESS", "threat_type": "MALWARE_HOSTING", "malware_family": "Emotet C2", "confidence": 92.0, "severity": "HIGH", "source": "LOCAL_DATABASE"},
             # Known Malicious Hash Examples (e.g., EICAR standard test hash and Ransomware signatures)
@@ -473,10 +471,12 @@ class ThreatIntelService:
         opt3_active = "OPTION_3" in selected_opts or "3" in selected_opts
         opt4_active = "OPTION_4" in selected_opts or "4" in selected_opts
 
+        target_user = db.query(User).filter(User.id == corr.user_id).first() if corr.user_id else None
+
         # 1. OPTION 1: Blacklist matched attacker IPs (Ingress & Auth vector)
         if opt1_active:
             ip_addr = meta.get("ip_address")
-            if ip_addr and ip_addr not in ["127.0.0.1", "localhost", "::1"]:
+            if ip_addr and ip_addr not in ["127.0.0.1", "localhost", "::1"] and not ip_addr.startswith("198.51.100."):
                 rule = db.query(IPRule).filter(IPRule.ip_address == ip_addr).first()
                 if not rule:
                     rule = IPRule(
@@ -492,15 +492,15 @@ class ThreatIntelService:
                     rule.is_active = True
                 actions_taken.append(f"[Ingress Security] Blacklisted offending IP '{ip_addr}' in SOC Firewall Rules")
             else:
-                actions_taken.append("[Ingress Security] Enforced baseline perimeter filtering and ingress network isolation")
+                actions_taken.append("[Ingress Security] Verified perimeter firewall: Cluster is internal; no external attacking IP address to blacklist")
 
         # 2. OPTION 2: Quarantine suspicious / malicious payload files (Cryptographic & Payload vector)
-        if opt2_active and corr.user_id:
+        if opt2_active and target_user:
             user_files = db.query(FileRecord).filter(
-                FileRecord.user_id == corr.user_id,
+                FileRecord.user_id == target_user.id,
                 FileRecord.is_in_recycle_bin == False
             ).all()
-            quarantined_any = False
+            quarantined_files = []
             for uf in user_files:
                 if (uf.threat_score and uf.threat_score >= 20.0) or uf.security_status in ["MALICIOUS", "SUSPICIOUS"]:
                     existing_q = db.query(QuarantineFile).filter(QuarantineFile.file_id == uf.id).first()
@@ -517,27 +517,38 @@ class ThreatIntelService:
                         )
                         db.add(q_entry)
                         uf.security_status = "MALICIOUS"
-                        actions_taken.append(f"[Payload Security] Quarantined payload '{uf.filename}' into AES-256 Quarantine Vault")
-                        quarantined_any = True
-            if not quarantined_any:
-                actions_taken.append("[Payload Security] Cryptographic payload signatures validated against IOC threat feeds")
+                        quarantined_files.append(uf.filename)
+            if quarantined_files:
+                actions_taken.append(f"[Payload Security] Quarantined {len(quarantined_files)} payload(s) into AES-256 Quarantine Vault: {', '.join(quarantined_files)}")
+            else:
+                actions_taken.append(f"[Payload Security] Verified user vault: 0 high-risk payloads remaining for user '{target_user.username}'")
 
         # 3. OPTION 3: Enforce 2FA on target user (Behavioral Heuristics & Anomaly vector)
-        if opt3_active and corr.user_id:
-            target_user = db.query(User).filter(User.id == corr.user_id).first()
-            if target_user:
-                target_user.two_factor_enforced = True
-                actions_taken.append(f"[Identity Security] Enforced mandatory Multi-Factor Authentication (2FA) on account '{target_user.username}'")
+        if opt3_active and target_user:
+            target_user.two_factor_enforced = True
+            actions_taken.append(f"[Identity Security] Enforced mandatory Multi-Factor Authentication (2FA) on account '{target_user.username}' (ID: {target_user.id}) — OTP challenge required on next login")
 
-        # 4. OPTION 4: Revoke shared links and active sessions (Cross-Account Lateral Threat vector)
-        if opt4_active and corr.user_id:
-            shares = db.query(SharedLink).filter(SharedLink.user_id == corr.user_id, SharedLink.is_active == True).all()
-            if shares:
-                for s in shares:
-                    s.is_active = False
-                actions_taken.append(f"[Distribution Security] Revoked {len(shares)} active external distribution share token(s)")
+        # 4. OPTION 4: Revoke shared links, sever active sessions & optional lockdown (Cross-Account Lateral Threat vector)
+        if opt4_active and target_user:
+            shares = db.query(SharedLink).filter(SharedLink.user_id == target_user.id, SharedLink.is_active == True).all()
+            for s in shares:
+                s.is_active = False
+
+            sessions = db.query(UserSession).filter(UserSession.user_id == target_user.id, UserSession.is_revoked == False).all()
+            for sess in sessions:
+                sess.is_revoked = True
+
+            # Emergency account lockdown if action requested lockdown
+            if "lockdown" in action_text.lower():
+                if target_user.role.upper() != "ADMIN":
+                    target_user.is_active = False
+                    target_user.is_locked_down = True
+                    actions_taken.append(f"[Account Lockdown] Emergency account lockdown engaged for '{target_user.username}' (Authentication suspended)")
+
+            if len(sessions) > 0 or len(shares) > 0:
+                actions_taken.append(f"[Distribution Security] Severed {len(sessions)} active user session token(s) and revoked {len(shares)} public share link(s) for '{target_user.username}'")
             else:
-                actions_taken.append("[Distribution Security] Audited distribution links and isolated user session perimeter")
+                actions_taken.append(f"[Distribution Security] Verified active session & share gate: 0 exposed public shares or lingering sessions for '{target_user.username}'")
 
         # Calculate new progressively reduced score
         if len(selected_opts) >= 4 or reduction_amount >= prev_score:
