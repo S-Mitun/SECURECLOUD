@@ -14,7 +14,7 @@ from sqlalchemy import func
 from backend.app.models.models import (
     SecurityEvent, ThreatIndicator, ThreatCorrelation, 
     CorrelationEvent, SecurityIncident, IPRule, QuarantineFile, 
-    FileRecord, SharedLink, User, Notification
+    FileRecord, SharedLink, User, Notification, UserSession
 )
 from backend.app.services.audit_service import AuditService
 

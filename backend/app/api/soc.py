@@ -1234,7 +1234,11 @@ def execute_cluster_mitigation(
     """Executes real-time automated mitigation across all correlated cluster indicators in the database."""
     cluster_id = payload.get("cluster_id")
     action_text = payload.get("action", "Comprehensive Multi-Vector Mitigation")
-    options = payload.get("options", ["OPTION_1", "OPTION_2", "OPTION_3", "OPTION_4"])
+    options = payload.get("options")
+    if not options and payload.get("option"):
+        options = [payload.get("option")]
+    if not options:
+        options = ["OPTION_1", "OPTION_2", "OPTION_3", "OPTION_4"]
 
     if not cluster_id:
         raise HTTPException(status_code=400, detail="cluster_id is required.")
