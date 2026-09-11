@@ -186,13 +186,13 @@ export function SentinelVm() {
             </div>
             <div>
               <h1 className="text-xl font-black text-white tracking-wide flex items-center gap-2">
-                Sentinel Threat & File Security Operations
+                Sentinel Security Monitoring Console
                 <span className="px-2 py-0.5 bg-sky-950 border border-sky-500/40 text-sky-300 text-[10px] rounded font-mono">
-                  LIVE TELEMETRY
+                  SECURITY CONSOLE
                 </span>
               </h1>
               <p className="text-xs text-slate-400 mt-1">
-                Real-time LightGBM virus scan velocity, active shared links expiration streams, and malware quarantine radar with audio dispatch.
+                Real-time security telemetry, multi-layer virus scan activity, quarantine tracking, and system health status.
               </p>
             </div>
           </div>
@@ -238,7 +238,7 @@ export function SentinelVm() {
           <div className="flex items-center gap-2">
             <Radio className="w-4 h-4 text-sky-400 animate-pulse" />
             <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-              Live Threat Scan Velocity & Shared Link Stream (Oscilloscope)
+              Security Telemetry Visualization (Oscilloscope Presentation)
             </h3>
           </div>
           <div className="flex items-center gap-4 text-xs font-mono">

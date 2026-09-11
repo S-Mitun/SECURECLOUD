@@ -1,7 +1,7 @@
 import { apiClient } from './apiClient';
 
 export const authApi = {
-  login: async ({ email, password, portal = 'USER', mock_captcha_verified = true, totp_code = null, admin_security_code = null }) => {
+  login: async ({ email, password, portal = 'USER', totp_code = null }) => {
     return await apiClient('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({
@@ -9,22 +9,19 @@ export const authApi = {
         password,
         portal_type: portal,
         portal,
-        mock_captcha_verified,
-        totp_code,
-        admin_security_code
+        totp_code
       })
     });
   },
 
-  register: async ({ username, email, password, role = 'USER', admin_security_code = null }) => {
+  register: async ({ username, email, password, role = 'USER' }) => {
     return await apiClient('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({
         username,
         email,
         password,
-        role,
-        admin_security_code
+        role
       })
     });
   },
@@ -70,13 +67,6 @@ export const authApi = {
     return await apiClient('/api/auth/emergency-lockdown', {
       method: 'POST',
       body: JSON.stringify({ password, acknowledgement, reason })
-    });
-  },
-
-  retrieveAdminKey: async ({ email, password }) => {
-    return await apiClient('/api/auth/retrieve-admin-key', {
-      method: 'POST',
-      body: JSON.stringify({ email, password })
     });
   }
 };

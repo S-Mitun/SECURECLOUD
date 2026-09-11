@@ -25,7 +25,8 @@ from backend.app.security.auth_utils import get_current_user
 from backend.app.security.ip_guard import get_client_ip
 from backend.app.services.storage_service import (
     compute_hashes, format_size, sanitize_filename, generate_storage_path, resolve_storage_path,
-    recalculate_user_storage, get_user_storage_metrics, ensure_physical_file
+    recalculate_user_storage, get_user_storage_metrics, ensure_physical_file,
+    save_file_bytes, read_file_bytes, generate_file_presigned_url
 )
 from backend.app.services.quarantine_service import QuarantineService
 from backend.app.services.audit_service import AuditService
@@ -34,9 +35,11 @@ from backend.app.services.telemetry_service import increment_upload_count, incre
 from backend.app.services.presentation_service import PresentationService
 from backend.app.services.event_service import EventService
 from ml.predict import ThreatPredictor
+from scanner.scanner_service import UnifiedScannerService
 
 router = APIRouter(prefix="/api/files", tags=["Files"])
 predictor = ThreatPredictor()
+unified_scanner = UnifiedScannerService()
 
 def to_ist(dt: Optional[datetime]) -> str:
     if not dt:
@@ -118,8 +121,8 @@ async def upload_file(
         security_status = "CLEAN"
         final_verdict = scan_result["final_verdict"]
     else:
-        # Real ML & Heuristic Threat Prediction
-        scan_result = predictor.predict_file(raw_bytes, clean_filename)
+        # Real Multi-Layer Security Pipeline (ClamAV + Static PE Heuristics + LightGBM ML)
+        scan_result = unified_scanner.scan(raw_bytes, clean_filename)
         threat_score = scan_result["threat_score"]
         security_status = scan_result["security_status"]
         final_verdict = scan_result["final_verdict"]
@@ -172,6 +175,25 @@ async def upload_file(
             created_at=datetime.utcnow()
         )
         db.add(new_file)
+
+        # Persist SecurityScan record
+        sec_scan = SecurityScan(
+            file_id=new_file.id,
+            user_id=current_user.id,
+            file_hash=sha256,
+            threat_score=threat_score,
+            final_verdict=final_verdict,
+            security_status=security_status,
+            ml_prediction=scan_result.get("ml_prediction", "MALICIOUS"),
+            ml_probabilities=scan_result.get("ml_probabilities", {}),
+            model_version=scan_result.get("model_version", "LightGBM v2.0"),
+            heuristic_score=scan_result.get("heuristic_score", 0.0),
+            heuristic_verdict=scan_result.get("heuristic_verdict", "MALICIOUS"),
+            triggered_rules=scan_result.get("heuristic_rules", []),
+            explanations=scan_result.get("reasons") or scan_result.get("explanations", []),
+            scanned_at=datetime.utcnow()
+        )
+        db.add(sec_scan)
         db.commit()
 
         EventService.record_event(
@@ -210,19 +232,22 @@ async def upload_file(
                 "threat_score": threat_score,
                 "final_verdict": final_verdict,
                 "security_status": security_status,
-                "ml_prediction": scan_result["ml_prediction"],
-                "ml_probabilities": scan_result["ml_probabilities"],
-                "model_version": scan_result["model_version"],
-                "heuristic_score": scan_result["heuristic_score"],
-                "heuristic_rules": scan_result["heuristic_rules"],
-                "explanations": scan_result["explanations"]
+                "final_risk": scan_result.get("final_risk", "CRITICAL"),
+                "detection_layers": scan_result.get("detection_layers", {}),
+                "reasons": scan_result.get("reasons", []),
+                "ml_prediction": scan_result.get("ml_prediction", "MALICIOUS"),
+                "ml_probabilities": scan_result.get("ml_probabilities", {}),
+                "model_version": scan_result.get("model_version", "v2.0"),
+                "heuristic_score": scan_result.get("heuristic_score", 0.0),
+                "heuristic_rules": scan_result.get("heuristic_rules", []),
+                "explanations": scan_result.get("explanations", [])
             },
             "storage": storage_metrics
         }
 
-    # If Safe or Suspicious -> Write Original Raw Bytes to Storage Vault
-    with open(storage_path, "wb") as f:
-        f.write(raw_bytes)
+    # If Safe or Suspicious -> Write Original Raw Bytes through Object Storage Provider
+    storage_key = f"users/{current_user.id}/uploads/{file_id}_{clean_filename}"
+    saved_storage_path = save_file_bytes(storage_key, raw_bytes, content_type=scan_result.get("detected_mime", "application/octet-stream"))
 
     # Create Database Records
     new_file = FileRecord(
@@ -241,7 +266,7 @@ async def upload_file(
         current_version="v1.0",
         threat_score=threat_score,
         security_status=security_status,
-        storage_path=storage_path,
+        storage_path=saved_storage_path,
         created_at=datetime.utcnow()
     )
     db.add(new_file)
@@ -252,11 +277,31 @@ async def upload_file(
         version_tag="v1.0",
         file_size=file_size,
         file_hash=sha256,
-        storage_path=storage_path,
+        storage_path=saved_storage_path,
         uploader_id=current_user.id,
         created_at=datetime.utcnow()
     )
     db.add(v1)
+
+    # Persist SecurityScan record
+    sec_scan = SecurityScan(
+        file_id=new_file.id,
+        user_id=current_user.id,
+        file_hash=sha256,
+        threat_score=threat_score,
+        final_verdict=final_verdict,
+        security_status=security_status,
+        ml_prediction=scan_result.get("ml_prediction", "CLEAN"),
+        ml_probabilities=scan_result.get("ml_probabilities", {}),
+        model_version=scan_result.get("model_version", "LightGBM v2.0"),
+        heuristic_score=scan_result.get("heuristic_score", 0.0),
+        heuristic_verdict=scan_result.get("heuristic_verdict", "CLEAN"),
+        triggered_rules=scan_result.get("heuristic_rules", []),
+        explanations=scan_result.get("reasons") or scan_result.get("explanations", []),
+        scanned_at=datetime.utcnow()
+    )
+    db.add(sec_scan)
+
     increment_upload_count()
     db.commit()
 
@@ -450,24 +495,30 @@ def get_file_versions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Lists all versions for a file."""
-    f = db.query(FileRecord).filter(FileRecord.id == file_id, FileRecord.user_id == current_user.id).first()
+    """Lists all versions for a file with uploader and scan verdict."""
+    f = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not f:
         raise HTTPException(status_code=404, detail="File not found.")
+    if f.user_id != current_user.id and current_user.role.upper() != "ADMIN":
+        raise HTTPException(status_code=403, detail="Access denied.")
 
     versions = db.query(FileVersion).filter(FileVersion.file_id == file_id).order_by(FileVersion.created_at.desc()).all()
-    return [
-        {
+    results = []
+    for v in versions:
+        uploader = db.query(User).filter(User.id == v.uploader_id).first()
+        results.append({
             "id": v.id,
             "file_id": v.file_id,
             "version_tag": v.version_tag,
             "file_size": v.file_size,
             "file_size_formatted": format_size(v.file_size),
             "file_hash": v.file_hash,
+            "uploader_username": uploader.username if uploader else "System",
+            "security_status": f.security_status,
+            "threat_score": f.threat_score,
             "created_at": to_ist(v.created_at)
-        }
-        for v in versions
-    ]
+        })
+    return results
 
 @router.post("/{file_id}/versions/upload")
 async def upload_new_version(
@@ -476,7 +527,7 @@ async def upload_new_version(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Uploads a new version of an existing file."""
+    """Uploads a new version of an existing file through object storage & unified scanner."""
     f = db.query(FileRecord).filter(FileRecord.id == file_id, FileRecord.user_id == current_user.id).first()
     if not f:
         raise HTTPException(status_code=404, detail="File not found.")
@@ -490,13 +541,11 @@ async def upload_new_version(
     new_version_tag = f"v{existing_count + 1}.0"
 
     ext = os.path.splitext(f.filename)[1].lower()
-    _, new_storage_path = generate_storage_path(ext)
+    storage_key = f"users/{current_user.id}/versions/{f.id}_{new_version_tag}_{f.filename}"
+    new_storage_path = save_file_bytes(storage_key, raw_bytes, content_type=f.mime_type)
 
-    with open(new_storage_path, "wb") as storage_file:
-        storage_file.write(raw_bytes)
-
-    # Rescan new version
-    scan_res = predictor.predict_file(raw_bytes, f.filename)
+    # Multi-Layer Rescan of new version
+    scan_res = unified_scanner.scan(raw_bytes, f.filename)
 
     # Create Version
     ver = FileVersion(
@@ -509,6 +558,25 @@ async def upload_new_version(
         created_at=datetime.utcnow()
     )
     db.add(ver)
+
+    # Persist SecurityScan record
+    sec_scan = SecurityScan(
+        file_id=f.id,
+        user_id=current_user.id,
+        file_hash=hashes["sha256"],
+        threat_score=scan_res["threat_score"],
+        final_verdict=scan_res["final_verdict"],
+        security_status=scan_res["security_status"],
+        ml_prediction=scan_res.get("ml_prediction", "CLEAN"),
+        ml_probabilities=scan_res.get("ml_probabilities", {}),
+        model_version=scan_res.get("model_version", "LightGBM v2.0"),
+        heuristic_score=scan_res.get("heuristic_score", 0.0),
+        heuristic_verdict=scan_res.get("heuristic_verdict", "CLEAN"),
+        triggered_rules=scan_res.get("heuristic_rules", []),
+        explanations=scan_res.get("reasons") or scan_res.get("explanations", []),
+        scanned_at=datetime.utcnow()
+    )
+    db.add(sec_scan)
 
     # Update active FileRecord
     f.file_size = file_size
@@ -528,7 +596,45 @@ async def upload_new_version(
     return {
         "message": f"Version {new_version_tag} uploaded successfully.",
         "version": new_version_tag,
+        "threat_score": f.threat_score,
+        "security_status": f.security_status,
+        "scan": scan_res,
         "storage": storage_metrics
+    }
+
+@router.post("/{file_id}/versions/{version_id}/restore")
+def restore_file_version(
+    file_id: str,
+    version_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Restores a previous file version as the active version."""
+    f = db.query(FileRecord).filter(FileRecord.id == file_id).first()
+    if not f:
+        raise HTTPException(status_code=404, detail="File not found.")
+    if f.user_id != current_user.id and current_user.role.upper() != "ADMIN":
+        raise HTTPException(status_code=403, detail="Access denied.")
+
+    ver = db.query(FileVersion).filter(FileVersion.id == version_id, FileVersion.file_id == file_id).first()
+    if not ver:
+        raise HTTPException(status_code=404, detail="Version not found.")
+
+    f.file_size = ver.file_size
+    f.file_hash = ver.file_hash
+    f.storage_path = ver.storage_path
+    f.current_version = f"{ver.version_tag} (Restored)"
+    f.updated_at = datetime.utcnow()
+    db.commit()
+
+    AuditService.log(
+        db, "RESTORE_VERSION", f"File {f.filename}", "SUCCESS",
+        f"Restored to {ver.version_tag}", user_id=current_user.id, username=current_user.username
+    )
+    return {
+        "status": "SUCCESS",
+        "message": f"Successfully restored '{f.filename}' to {ver.version_tag}.",
+        "active_version": f.current_version
     }
 
 # =========================================================================
@@ -543,7 +649,7 @@ def download_file(
 ):
     """
     Returns the exact original file bytes as an attachment.
-    Blocks files currently in the Recycle Bin.
+    Blocks files currently in the Recycle Bin and enforces quarantine isolation.
     """
     f = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not f:
@@ -552,11 +658,22 @@ def download_file(
     if f.user_id != current_user.id and current_user.role.upper() != "ADMIN":
         raise HTTPException(status_code=403, detail="Access denied. You do not have permission to download this file.")
 
+    if (f.security_status in ["MALICIOUS", "QUARANTINED"] or getattr(f, "is_quarantined", False)) and current_user.role.upper() != "ADMIN":
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied. This file has been isolated into the Quarantine Vault due to malicious threat classification."
+        )
+
     if f.is_in_recycle_bin:
         raise HTTPException(
             status_code=400,
             detail="File is currently in the Recycle Bin. Restore the file before viewing or downloading it."
         )
+
+    # Check for S3 presigned URL
+    presigned = generate_file_presigned_url(f.storage_path)
+    if presigned:
+        return {"download_url": presigned, "direct": True}
 
     f.storage_path = ensure_physical_file(f, db)
 
@@ -580,15 +697,20 @@ def view_file_content(
 ):
     """
     Provides a structured, format-preserving view of the original file.
-    NEVER replaces content with fake text, and NEVER displays raw ZIP bytes for DOCX/XLSX.
+    Enforces quarantine restriction for non-admin users.
     """
-    # Allow owner OR admin (for non-confidential files) to preview
     f = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not f:
         raise HTTPException(status_code=404, detail="File not found.")
 
     if f.user_id != current_user.id and current_user.role.upper() != "ADMIN":
         raise HTTPException(status_code=403, detail="Access denied. You do not have permission to view this file.")
+
+    if (f.security_status in ["MALICIOUS", "QUARANTINED"] or getattr(f, "is_quarantined", False)) and current_user.role.upper() != "ADMIN":
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied. This file has been isolated into the Quarantine Vault due to malicious threat classification."
+        )
 
     if f.is_confidential:
         return {
@@ -791,6 +913,12 @@ def stream_file(
     f = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not f or f.is_in_recycle_bin:
         raise HTTPException(status_code=404, detail="File not found.")
+
+    if f.security_status in ["MALICIOUS", "QUARANTINED"] or getattr(f, "is_quarantined", False):
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied. This file has been isolated into the Quarantine Vault due to malicious threat classification."
+        )
 
     f.storage_path = ensure_physical_file(f, db)
 

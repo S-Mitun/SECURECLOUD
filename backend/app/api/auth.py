@@ -21,7 +21,10 @@ from backend.app.schemas.schemas import (
 from backend.app.security.auth_utils import (
     hash_password, verify_password, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
 )
-from backend.app.security.ip_guard import check_ip_access, get_client_ip
+from backend.app.security.ip_guard import (
+    check_ip_access, get_client_ip, check_login_rate_limit,
+    check_rate_limit, record_failed_login, clear_failed_logins
+)
 from backend.app.services.audit_service import AuditService
 from backend.app.services.storage_service import get_user_storage_metrics, recalculate_user_storage
 from backend.app.services.event_service import EventService
@@ -35,9 +38,10 @@ def register_user(
     db: Session = Depends(get_db)
 ):
     """
-    Registers a new tenant account with role isolation and Admin Config PIN support.
+    Registers a new tenant account with strict role validation and rate limiting.
     """
     check_ip_access(request, db)
+    check_rate_limit(request, scope="register", max_requests=10, window_seconds=60)
     client_ip = get_client_ip(request)
     ua = request.headers.get("user-agent", "Unknown Browser")[:250]
 
@@ -53,14 +57,15 @@ def register_user(
 
     # 10 GB Standard Quota
     default_quota = 10 * 1024 * 1024 * 1024
-    is_admin = bool(req.role and req.role.upper() == "ADMIN")
-    admin_pin = (req.admin_security_code or "994422").strip() if is_admin else "994422"
+    is_admin = bool(req.role and req.role.upper() in ["ADMIN", "SECURITY_ANALYST"])
+    assigned_role = req.role.upper() if is_admin else "USER"
+    admin_pin = req.admin_security_code.strip() if (req.admin_security_code and req.admin_security_code.strip()) else None
 
     new_user = User(
         username=req.username.strip(),
         email=req.email.strip().lower(),
         hashed_password=hash_password(req.password),
-        role="ADMIN" if is_admin else "USER",
+        role=assigned_role,
         quota_bytes=default_quota,
         used_quota_bytes=0,
         is_active=True,
@@ -101,8 +106,7 @@ def register_user(
             "role": new_user.role,
             "is_active": new_user.is_active,
             "is_2fa_enabled": new_user.is_2fa_enabled,
-            "two_factor_enforced": False,
-            "admin_security_code": new_user.admin_security_code if is_admin else None
+            "two_factor_enforced": False
         },
         "message": "Account created successfully."
     }
@@ -118,6 +122,7 @@ def login_user(
     and Admin Config Password verification.
     """
     check_ip_access(request, db)
+    check_login_rate_limit(request, identifier=req.email)
     client_ip = get_client_ip(request)
     ua = request.headers.get("user-agent", "Unknown Browser")[:250]
 
@@ -126,6 +131,8 @@ def login_user(
         (User.email == identifier.lower()) | (User.username == identifier)
     ).first()
     if not user or not verify_password(req.password, user.hashed_password):
+        record_failed_login(client_ip)
+        record_failed_login(identifier.lower())
         EventService.record_event(
             db, "LOGIN_FAILURE", ip_address=client_ip, user_agent=ua,
             result="FAILED", severity="MEDIUM", metadata={"attempted_email": req.email}
@@ -143,7 +150,8 @@ def login_user(
 
     # Strict Portal Validation (Mutual Exclusivity)
     portal = (req.portal or req.portal_type or "USER").upper()
-    if portal == "ADMIN" and user.role.upper() != "ADMIN":
+    is_admin_role = user.role.upper() in ["ADMIN", "SECURITY_ANALYST"]
+    if portal == "ADMIN" and not is_admin_role:
         EventService.record_event(
             db, "ADMIN_LOGIN_ATTEMPT", user_id=user.id, ip_address=client_ip, user_agent=ua,
             result="BLOCKED", severity="HIGH", metadata={"reason": "Unauthorized admin portal ingress"}
@@ -155,10 +163,10 @@ def login_user(
         )
         raise HTTPException(
             status_code=403,
-            detail="Access denied. This account is registered as USER and cannot authenticate through the ADMIN portal. Please log in through the User Portal."
+            detail="Access denied. This account does not possess Administrator or Security Analyst privileges."
         )
 
-    if portal == "USER" and user.role.upper() == "ADMIN":
+    if portal == "USER" and is_admin_role:
         EventService.record_event(
             db, "USER_PORTAL_ADMIN_INGRESS", user_id=user.id, ip_address=client_ip, user_agent=ua,
             result="BLOCKED", severity="HIGH", metadata={"reason": "Admin attempted user portal ingress"}
@@ -172,24 +180,6 @@ def login_user(
             status_code=403,
             detail="Access denied. Administrator accounts must authenticate exclusively through the Admin Portal."
         )
-
-    # Admin Dual Auth Key Verification (Accepts user's personal key, default '994422', or auto-defaults if blank)
-    if portal == "ADMIN" or user.role.upper() == "ADMIN":
-        expected_admin_pin = (user.admin_security_code or "994422").strip()
-        entered_pin = (req.admin_security_code or "").strip()
-        if not entered_pin:
-            entered_pin = "994422"
-        if entered_pin not in [expected_admin_pin, "994422"]:
-            EventService.record_event(
-                db, "ADMIN_PIN_FAILURE", user_id=user.id, ip_address=client_ip, user_agent=ua,
-                result="FAILED", severity="HIGH", metadata={"reason": "Incorrect Admin Dual Auth Key"}
-            )
-            AuditService.log(
-                db, "ADMIN_LOGIN_ATTEMPT", f"Admin {user.username}", "FAILED", 
-                "Wrong Admin Dual Auth Key entered", 
-                user_id=user.id, username=user.username, ip_address=client_ip
-            )
-            raise HTTPException(status_code=401, detail="Wrong Auth Key. (Default: 994422)")
 
     # 2FA Check (either user-enabled or admin-enforced)
     if user.is_2fa_enabled or user.two_factor_enforced:
@@ -241,6 +231,10 @@ def login_user(
         # Clear 2FA one-time code upon successful validation
         user.two_factor_code = None
         db.commit()
+
+    # Successful authentication: clear failure rate limit counters
+    clear_failed_logins(client_ip)
+    clear_failed_logins(user.email.strip().lower())
 
     # Check for New Device / New IP anomaly
     if user.last_login_ip and user.last_login_ip != client_ip and client_ip not in ["127.0.0.1", "localhost"]:
@@ -302,7 +296,6 @@ def login_user(
             "is_active": user.is_active,
             "is_2fa_enabled": user.is_2fa_enabled,
             "two_factor_enforced": user.two_factor_enforced or False,
-            "admin_security_code": user.admin_security_code if user.role.upper() == "ADMIN" else None,
             "used_quota_formatted": metrics["used_formatted"],
             "quota_formatted": metrics["quota_formatted"]
         },
@@ -323,7 +316,6 @@ def get_profile(
         "role": current_user.role,
         "is_2fa_enabled": current_user.is_2fa_enabled,
         "two_factor_enforced": current_user.two_factor_enforced or False,
-        "admin_security_code": current_user.admin_security_code if current_user.role.upper() == "ADMIN" else None,
         "quota_bytes": metrics["quota_bytes"],
         "used_quota_bytes": metrics["used_bytes"],
         "remaining_quota_bytes": metrics["remaining_bytes"],
@@ -359,34 +351,3 @@ def logout_user(
         user_id=current_user.id, username=current_user.username, role=current_user.role, ip_address=client_ip
     )
     return {"status": "SUCCESS", "message": "Successfully logged out."}
-
-@router.post("/retrieve-admin-key")
-def retrieve_admin_dual_auth_key(
-    payload: Dict[str, Any] = Body(...),
-    request: Request = None,
-    db: Session = Depends(get_db)
-):
-    """
-    Allows an administrator who forgot their Dual Auth Key to enter their account password
-    to securely retrieve and view their personal fixed Dual Auth Key.
-    """
-    email = str(payload.get("email") or "").strip().lower()
-    password = str(payload.get("password") or "").strip()
-
-    if not email or not password:
-        raise HTTPException(status_code=400, detail="Administrator email and password are required.")
-
-    user = db.query(User).filter(User.email == email).first()
-    if not user or not verify_password(password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Incorrect account password. Verification failed.")
-
-    if user.role.upper() != "ADMIN":
-        raise HTTPException(status_code=403, detail="Only Administrator accounts possess an Admin Dual Auth Key.")
-
-    return {
-        "status": "SUCCESS",
-        "username": user.username,
-        "email": user.email,
-        "admin_security_code": user.admin_security_code or "994422",
-        "message": f"Admin Dual Auth Key verified for '{user.username}'."
-    }

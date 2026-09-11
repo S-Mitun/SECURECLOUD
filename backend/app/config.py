@@ -35,8 +35,26 @@ MAX_UPLOAD_SIZE_BYTES = 200 * 1024 * 1024 # 200 MB per file limit
 # Telemetry
 PROMETHEUS_METRICS_PATH = "/metrics"
 
-# Supabase Cloud Integration (Optional)
+# Supabase Cloud Integration
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", os.getenv("SUPABASE_ANON_KEY", ""))
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
 SUPABASE_ENABLED = bool(SUPABASE_URL and (SUPABASE_KEY or SUPABASE_SERVICE_KEY))
+
+# S3-Compatible Object Storage Configuration
+S3_ENDPOINT = os.getenv("S3_ENDPOINT", "") # e.g. https://<account_id>.r2.cloudflarestorage.com or https://s3.amazonaws.com
+S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY", "")
+S3_SECRET_KEY = os.getenv("S3_SECRET_KEY", "")
+S3_BUCKET = os.getenv("S3_BUCKET", "")
+S3_REGION = os.getenv("S3_REGION", "us-east-1")
+S3_ENABLED = bool(S3_ACCESS_KEY and S3_SECRET_KEY and S3_BUCKET)
+
+# Real ClamAV Malware Scanning Engine
+CLAMAV_HOST = os.getenv("CLAMAV_HOST", "127.0.0.1")
+CLAMAV_PORT = int(os.getenv("CLAMAV_PORT", "3310"))
+
+# Network & CORS Configuration
+PORT = int(os.getenv("PORT", "8000"))
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "")
+

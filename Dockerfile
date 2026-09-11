@@ -30,9 +30,11 @@ COPY backend/requirements.txt ./backend/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r backend/requirements.txt
 
-# Copy Backend, ML, Scripts, complete database, and file storage
+# Copy Backend, ML, Scanner, Scripts, complete database, and file storage
 COPY backend/ ./backend/
 COPY ml/ ./ml/
+COPY scanner/ ./scanner/
+COPY demo_test_files/ ./demo_test_files/
 COPY scripts/ ./scripts/
 COPY securecloud.db ./securecloud.db
 COPY storage/ ./storage/

@@ -539,7 +539,7 @@ def get_admin_security_config_code(
     """Returns the current administrator's dual-authorization security code."""
     return {
         "status": "SUCCESS",
-        "admin_security_code": current_admin.admin_security_code or "994422",
+        "admin_security_code": current_admin.admin_security_code or "",
         "username": current_admin.username,
         "email": current_admin.email,
         "role": current_admin.role
@@ -592,10 +592,10 @@ def _verify_and_unlock_admin_vault(payload: Dict[str, Any], current_admin: User,
     if not target_admin or target_admin.role.upper() != "ADMIN":
         raise HTTPException(status_code=404, detail="Target administrator not found.")
 
-    expected_code = (target_admin.admin_security_code or "994422").strip()
+    expected_code = (target_admin.admin_security_code or "").strip()
 
     # Strict check: only target admin's exact PIN is permitted
-    if entered_code != expected_code:
+    if not expected_code or entered_code != expected_code:
         notif = Notification(
             user_id=target_admin.id,
             title="Cross-Admin Repository Access Blocked",
@@ -654,7 +654,7 @@ def get_current_admin_security_code(
     """Returns the logged-in administrator's personal, fixed Dual-Auth Key PIN."""
     # Ensure fresh DB record
     admin_user = db.query(User).filter(User.id == current_admin.id).first()
-    pin = admin_user.admin_security_code if admin_user and admin_user.admin_security_code else (current_admin.admin_security_code or "994422")
+    pin = admin_user.admin_security_code if admin_user and admin_user.admin_security_code else (current_admin.admin_security_code or "")
     return {
         "status": "SUCCESS",
         "admin_security_code": pin,
@@ -693,11 +693,11 @@ def _execute_file_scan_pipeline(f: FileRecord, db: Session, current_user: User, 
     # Cross-Admin Authorization check
     file_owner = f.owner or db.query(User).filter(User.id == f.user_id).first()
     if file_owner and file_owner.role.upper() == "ADMIN" and file_owner.id != current_user.id:
-        expected_code = (file_owner.admin_security_code or "994422").strip()
-        if not admin_auth_code or admin_auth_code.strip() != expected_code:
+        expected_code = (file_owner.admin_security_code or "").strip()
+        if expected_code and (not admin_auth_code or admin_auth_code.strip() != expected_code):
             raise HTTPException(
                 status_code=403,
-                detail=f"DUAL_ADMIN_AUTH_REQUIRED: This file belongs to Administrator '{file_owner.username}'. SOC protocol requires target Administrator's 6-digit authorization PIN."
+                detail=f"DUAL_ADMIN_AUTH_REQUIRED: This file belongs to Administrator '{file_owner.username}'. SOC protocol requires target Administrator's authorization PIN."
             )
 
     f.storage_path = resolve_storage_path(f.storage_path)

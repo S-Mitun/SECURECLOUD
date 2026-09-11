@@ -9,17 +9,19 @@ import socket
 import subprocess
 from typing import Dict, Any, Optional
 
+from backend.app.config import CLAMAV_HOST, CLAMAV_PORT
+
 class ClamAVScanner:
-    """Provides non-mocked ClamAV integration when available on the host machine."""
+    """Provides real ClamAV integration when available on the host/network."""
 
     @staticmethod
     def is_available() -> bool:
-        """Checks whether ClamAV daemon is listening on localhost:3310 or clamscan is in PATH."""
+        """Checks whether ClamAV daemon is listening on configured host/port or clamscan is in PATH."""
         # 1. Check clamd TCP socket
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(0.3)
-            result = s.connect_ex(('127.0.0.1', 3310))
+            s.settimeout(0.5)
+            result = s.connect_ex((CLAMAV_HOST, CLAMAV_PORT))
             s.close()
             if result == 0:
                 return True
@@ -46,7 +48,7 @@ class ClamAVScanner:
             return {
                 "available": False,
                 "status": "UNAVAILABLE",
-                "message": "ClamAV engine unavailable (Host does not have active clamd/clamscan)",
+                "message": "Signature scanner unavailable; static/ML analysis continued.",
                 "threat_found": False,
                 "virus_name": None
             }
@@ -54,9 +56,8 @@ class ClamAVScanner:
         # If available, run scan
         try:
             import clamd
-            cd = clamd.ClamdNetworkSocket("127.0.0.1", 3310)
+            cd = clamd.ClamdNetworkSocket(CLAMAV_HOST, CLAMAV_PORT)
             res = cd.instream(raw_bytes)
-            # Response format: {'stream': ('FOUND', 'Eicar-Test-Signature')} or {'stream': ('OK', None)}
             stream_res = res.get("stream", ("OK", None))
             if stream_res[0] == "FOUND":
                 return {

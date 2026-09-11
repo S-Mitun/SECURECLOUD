@@ -295,3 +295,44 @@ def ensure_physical_file(file_rec: Any, db: Optional[Session] = None) -> str:
                 pass
 
     return target_path
+
+
+def save_file_bytes(storage_key_or_path: str, data: bytes, content_type: str = "application/octet-stream") -> str:
+    """Stores file bytes using active storage provider (S3 or local filesystem)."""
+    from backend.app.services.object_storage import get_storage_provider
+    provider = get_storage_provider()
+    return provider.save_bytes(storage_key_or_path, data, content_type=content_type)
+
+
+def read_file_bytes(storage_key_or_path: str) -> bytes:
+    """Reads file bytes using active storage provider (S3 or local filesystem)."""
+    from backend.app.services.object_storage import get_storage_provider
+    provider = get_storage_provider()
+    return provider.read_bytes(storage_key_or_path)
+
+
+def delete_file_from_storage(storage_key_or_path: str) -> bool:
+    """Deletes file bytes using active storage provider."""
+    from backend.app.services.object_storage import get_storage_provider
+    provider = get_storage_provider()
+    return provider.delete(storage_key_or_path)
+
+
+def generate_file_presigned_url(storage_key_or_path: str, expires_in: int = 3600) -> Optional[str]:
+    """Generates presigned download URL if using S3 object storage."""
+    from backend.app.services.object_storage import get_storage_provider
+    provider = get_storage_provider()
+    return provider.generate_presigned_url(storage_key_or_path, expires_in=expires_in)
+
+
+def get_active_storage_info() -> Dict[str, Any]:
+    """Returns provider status and connectivity diagnostics."""
+    from backend.app.services.object_storage import get_storage_provider
+    provider = get_storage_provider()
+    is_healthy, detail = provider.check_health()
+    return {
+        "provider": provider.get_provider_name(),
+        "is_healthy": is_healthy,
+        "detail": detail
+    }
+

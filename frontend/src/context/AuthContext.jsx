@@ -53,14 +53,12 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const login = async ({ email, password, portal = 'USER', mock_captcha_verified = true, totp_code = null, admin_security_code = null }) => {
+  const login = async ({ email, password, portal = 'USER', totp_code = null }) => {
     const res = await authApi.login({
       email,
       password,
       portal,
-      mock_captcha_verified,
-      totp_code,
-      admin_security_code
+      totp_code
     });
 
     if (res.requires_2fa) {
@@ -74,8 +72,8 @@ export function AuthProvider({ children }) {
     return res;
   };
 
-  const register = async ({ username, email, password, role = 'USER', admin_security_code = null }) => {
-    const res = await authApi.register({ username, email, password, role, admin_security_code });
+  const register = async ({ username, email, password, role = 'USER' }) => {
+    const res = await authApi.register({ username, email, password, role });
     setToken(res.access_token);
     setUser(res.user);
     sessionStorage.setItem('sc_token', res.access_token);

@@ -17,7 +17,10 @@ from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
-from backend.app.config import JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from backend.app.config import (
+    JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES,
+    SUPABASE_JWT_SECRET
+)
 from backend.app.database import get_db
 from backend.app.models.models import User, UserSession
 
@@ -43,10 +46,26 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 def decode_token(token: str) -> Dict[str, Any]:
-    """Decodes and validates JWT token."""
+    """
+    Decodes and validates JWT token with support for both:
+    1. Standard SecureCloud HMAC JWT tokens
+    2. Supabase Auth JWT tokens (when SUPABASE_JWT_SECRET is configured)
+    """
+    # 1. Attempt Supabase JWT decoding if secret is present
+    if SUPABASE_JWT_SECRET:
+        try:
+            return jwt.decode(
+                token,
+                SUPABASE_JWT_SECRET,
+                algorithms=["HS256"],
+                options={"verify_aud": False}
+            )
+        except jwt.InvalidTokenError:
+            pass
+
+    # 2. Fall back to standard application JWT secret
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return payload
+        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired.")
     except jwt.InvalidTokenError:
@@ -97,10 +116,44 @@ def get_current_user(
 
     payload = decode_token(auth.credentials)
     user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject.")
+    email = payload.get("email")
 
-    user = db.query(User).filter(User.id == int(user_id)).first()
+    user = None
+    # Lookup by numeric local ID if available
+    if user_id and str(user_id).isdigit():
+        user = db.query(User).filter(User.id == int(user_id)).first()
+
+    # Lookup by email if ID not matched (e.g. Supabase Auth UUID in sub)
+    if not user and email:
+        user = db.query(User).filter(User.email == email.strip().lower()).first()
+
+    # Auto-provision local profile record if authenticated via external Supabase Auth
+    if not user and email:
+        raw_username = payload.get("user_metadata", {}).get("username") or email.split("@")[0]
+        username = raw_username.strip()
+        counter = 1
+        while db.query(User).filter(User.username == username).first():
+            username = f"{raw_username}_{counter}"
+            counter += 1
+
+        role_claim = (payload.get("app_metadata", {}).get("role") or
+                      payload.get("user_metadata", {}).get("role", "USER")).upper()
+        if role_claim not in ["USER", "ADMIN", "SECURITY_ANALYST"]:
+            role_claim = "USER"
+
+        user = User(
+            username=username,
+            email=email.strip().lower(),
+            hashed_password="SUPABASE_MANAGED_AUTH",
+            role=role_claim,
+            is_active=True,
+            quota_bytes=10 * 1024 * 1024 * 1024,
+            created_at=datetime.utcnow()
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User account not found.")
 
@@ -112,8 +165,8 @@ def get_current_user(
 def get_current_admin(
     current_user: User = Depends(get_current_user)
 ) -> User:
-    """FastAPI dependency ensuring the caller has ADMIN role."""
-    if current_user.role.upper() != "ADMIN":
+    """FastAPI dependency ensuring the caller has ADMIN or SECURITY_ANALYST role."""
+    if current_user.role.upper() not in ["ADMIN", "SECURITY_ANALYST"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied. Administrator privileges required."

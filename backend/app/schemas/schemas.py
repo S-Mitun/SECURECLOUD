@@ -11,8 +11,8 @@ class UserRegisterRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: str = Field(..., min_length=3)
     password: str = Field(..., min_length=6)
-    role: Optional[str] = "USER" # "USER" or "ADMIN"
-    admin_security_code: Optional[str] = "994422"
+    role: Optional[str] = "USER" # "USER", "ADMIN", or "SECURITY_ANALYST"
+    admin_security_code: Optional[str] = None
 
 class UserLoginRequest(BaseModel):
     email: str

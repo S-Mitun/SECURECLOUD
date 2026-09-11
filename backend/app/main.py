@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
 
 from backend.app.database import engine, Base
-from backend.app.config import BASE_DIR
+from backend.app.config import BASE_DIR, CORS_ORIGINS
 from backend.app.services.telemetry_service import increment_request_count
 
 # Import all API routers
@@ -35,19 +35,24 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# CORS Middleware
+# CORS Middleware (Configurable via CORS_ORIGINS with safe defaults)
+cors_origins_list = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+]
+if CORS_ORIGINS:
+    extra_origins = [o.strip() for o in CORS_ORIGINS.split(",") if o.strip()]
+    cors_origins_list.extend(extra_origins)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-    ],
+    allow_origins=cors_origins_list,
     allow_origin_regex=r"^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$|^https:\/\/.*\.railway\.app$",
     allow_credentials=True,
     allow_methods=["*"],
@@ -55,15 +60,16 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
-# Telemetry middleware to count API calls
+# Telemetry & Security Headers Middleware
 @app.middleware("http")
 async def telemetry_middleware(request: Request, call_next):
     increment_request_count()
     response = await call_next(request)
-    # Add Security Headers (Allowing Same-Origin Iframes for Document/PDF Previews)
+    # Practical Security Headers
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
 
 # Register Routers
@@ -97,13 +103,42 @@ async def root_index():
 
 @app.get("/health")
 def health_check():
+    """
+    Production health check returning real, honest operational status of
+    Database, Storage, ML Engine, and Malware Scanner without exposing secrets.
+    """
+    # 1. Database check
+    db_status = "connected"
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as e:
+        db_status = f"degraded ({type(e).__name__})"
+
+    # 2. Storage check
+    from backend.app.services.storage_service import get_active_storage_info
+    storage_info = get_active_storage_info()
+    storage_status = "s3-connected" if storage_info["provider"] == "s3" else "local-storage"
+
+    # 3. ML status check
+    ml_status = "ready"
+    from backend.app.config import ML_DIR
+    model_path = ML_DIR / "models" / "active_model.joblib"
+    if not model_path.exists():
+        ml_status = "model-unavailable"
+
+    # 4. Malware scanner check
+    from scanner.scanner_service import unified_scanner
+    clam_avail = unified_scanner.clamav.is_available()
+    scanner_status = "clamav-active" if clam_avail else "Signature scanner unavailable; static/ML analysis continued."
+
     return {
-        "status": "healthy",
-        "service": "SecureCloud",
-        "app": "SecureCloud",
-        "ml_engine": "ONLINE",
-        "threat_engine": "ONLINE",
-        "security_policy": "STRICT_ROLE_ISOLATION"
+        "status": "ok",
+        "database": db_status,
+        "storage": storage_status,
+        "ml": ml_status,
+        "scanner": scanner_status
     }
 
 @app.get("/{full_path:path}")

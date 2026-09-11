@@ -1,309 +1,311 @@
 # 🛡️ SecureCloud
-> **"Secure Storage. Intelligent Protection."**  
-> Enterprise Zero-Trust Cloud Storage, Real-Time AI Threat Classification & Security Operations Center (SOC) Platform
+
+> **"A security-first cloud storage platform that stores files in the cloud, actively analyzes uploaded files using real malware scanning + lightweight ML/static analysis, explains security risks, records security events, and provides application-level incident response through a SOC dashboard."**
 
 ---
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Railway%20Cloud-00C7B7?style=for-the-badge&logo=railway&logoColor=white)](https://securecloud-app-production.up.railway.app)
 [![System Status](https://img.shields.io/badge/System%20Status-Healthy%20%7C%20Online-10B981?style=for-the-badge)](https://securecloud-app-production.up.railway.app/health)
-[![Backend](https://img.shields.io/badge/Backend-FastAPI%20v0.110-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Backend](https://img.shields.io/badge/Backend-FastAPI%20ASGI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%7C%20Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
-[![AI Engine](https://img.shields.io/badge/AI%20Threat%20Model-LightGBM%20%2B%20EMBER-FF6F00?style=for-the-badge&logo=scikitlearn&logoColor=white)](https://lightgbm.readthedocs.io)
-[![Encryption](https://img.shields.io/badge/Cryptography-AES--256--GCM-4F46E5?style=for-the-badge&logo=shield&logoColor=white)](https://github.com/S-Mitun/SECURECLOUD)
+[![Object Storage](https://img.shields.io/badge/Storage-S3--Compatible%20%2B%20Local-FF9900?style=for-the-badge&logo=amazons3&logoColor=white)](https://boto3.amazonaws.com)
+[![Malware Scanner](https://img.shields.io/badge/Malware%20Scanner-ClamAV%20Daemon%20Layer-E62B1E?style=for-the-badge)](https://www.clamav.net)
+[![ML Threat Model](https://img.shields.io/badge/ML%20Threat%20Model-LightGBM%20CPU-FF6F00?style=for-the-badge&logo=scikitlearn&logoColor=white)](https://lightgbm.readthedocs.io)
 
 ---
 
-## 🌐 Live Cloud Deployment
+## 1. Project Overview
 
-SecureCloud is deployed live as a unified, production-grade container on Railway Cloud. Everyone can access and evaluate both the **User Vault Portal** and the **Admin SOC Portal** using the live demo link below:
+**SecureCloud** is an open-source cybersecurity cloud storage prototype engineered for hackathon and educational demonstrations. Unlike traditional file hosting platforms that treat files as passive payloads, SecureCloud actively verifies incoming files through a multi-tier security inspection pipeline before permitting persistent storage, sharing, or retrieval.
 
-### 🔗 **[Launch SecureCloud Live Application](https://securecloud-app-production.up.railway.app)**
-
-> **Production Gateway:** `https://securecloud-app-production.up.railway.app`  
-> **API Health Probe:** `https://securecloud-app-production.up.railway.app/health`  
-> **Swagger API Documentation:** `https://securecloud-app-production.up.railway.app/docs`
-
----
-
-### 🔑 Pre-Configured Demo Credentials
-
-The platform enforces strict server-side role isolation. Users can only log into their designated portal:
-
-| Portal Type | URL / Mode | Email / Username | Password | Dual-Auth Security Code | Permissions & Scope |
-|---|---|---|---|---|---|
-| **User Vault Portal** | [Access User Portal](https://securecloud-app-production.up.railway.app) | `Rahul` | `Rahul@123` | *N/A (Standard OTP)* | File Upload, Zero-Knowledge Vault, File Sharing, Soft Delete, Multi-Format Previews |
-| **Admin SOC Portal** | [Access Admin Portal](https://securecloud-app-production.up.railway.app) | `Remo` | `Remo@123` | `994422` | Full SOC Operations, Ingestion Audit, Threat Correlation, Sentinel VM, Quarantine, IP Guard |
-
-*(You can also register new user accounts directly through the registration tab in the User portal!)*
+### Novelty & Core Pillars:
+- **Cloud Object Storage**: S3-compatible cloud object storage abstraction (AWS S3, Cloudflare R2, MinIO) with user-isolated object keys, presigned URLs, and local fallback for offline development.
+- **Multi-Layer Threat Analysis**: Combines ClamAV signature-based scanning with deterministic static heuristic rules and a lightweight CPU-optimized Machine Learning classifier.
+- **Explainable Threat Scoring**: Explains *why* a file is marked safe, suspicious, or malicious by extracting and detailing concrete structural features (entropy, PE structures, extension mismatches, macro indicators).
+- **Application-Level Incident Response**: Integrated SOC dashboard offering one-click mitigation actions (quarantine, link revocation, IP blocking, 2FA enforcement).
+- **Security Monitoring Console**: Rebranded "Sentinel Security Monitoring Console" visualizing real-time telemetry, scan queues, and system resource health without synthetic sandboxing claims.
 
 ---
 
-## 🏛️ System Architecture
+## 2. Architecture
 
-SecureCloud is engineered with a modular, zero-trust architecture separating user-space storage from administrative threat telemetry:
+SecureCloud connects an ASGI FastAPI backend to a React 18 / Vite single-page application with modular storage, database, authentication, and security inspection engines:
 
 ```
-                                  [ INTERNET / CLIENT INGRESS ]
-                                                │
-                                  ┌─────────────┴─────────────┐
-                                  │   Railway Cloud Ingress   │
-                                  │   (HTTPS / TLS 1.3 Term)  │
-                                  └─────────────┬─────────────┘
-                                                │
-                 ┌──────────────────────────────┴──────────────────────────────┐
-                 │                                                             │
-      [ React 18 + Vite SPA ]                                      [ FastAPI ASGI Gateway ]
-      ├─ Cyber Dark SOC Theme                                      ├─ Strict Role-Based Access Control
-      ├─ Canvas 2D Telemetry Waveforms                             ├─ Session-Bound JWT Auth + Dual-Admin Gate
-      ├─ Format-Preserving Document Viewers                        ├─ RESTful API Engine
-      └─ Web Audio Military Alarm Siren                            └─ Prometheus Metrics (/metrics)
-                 │                                                             │
-                 └──────────────────────────────┬──────────────────────────────┘
-                                                │
-                 ┌──────────────────────────────┴──────────────────────────────┐
-                 │                                                             │
-     [ Storage & Enclave Layer ]                                   [ Threat Intelligence Core ]
-     ├─ Active Uploads (UUID Isolation)                            ├─ 30+ Static Heuristic Extractor
-     ├─ Zero-Knowledge Vault (AES-256-GCM)                         ├─ Shannon Entropy Analysis (0.0 - 8.0)
-     ├─ Progressive Lockout Shield (State Engine)                  ├─ LightGBM / EMBER ML Inference Engine
-     ├─ Soft-Delete Recycle Bin (IST Timestamps)                   ├─ Real-Time Signal Fusion & Health Scoring
-     └─ Quarantine Staging Vault                                   └─ Event-Driven SOC Correlation Engine
+                            [ React 18 / Vite Frontend ]
+                                         │
+                                         ▼ (REST / JSON + Bearer JWT)
+                            [ FastAPI ASGI Application ]
+                                         │
+     ┌───────────────────┬───────────────┴───────────────┬───────────────────┐
+     ▼                   ▼                               ▼                   ▼
+[Supabase Auth]  [PostgreSQL / SQLite]          [Object Storage]      [Security Engine]
+  Real JWT          Relational Schema            S3-Compatible /      ┌──────┴──────┐
+  Validation        Foreign Keys & RLS           Local Fallback       │ ClamAV (Sig)│
+                                                                      │ Static Feat.│
+                                                                      │ LightGBM ML │
+                                                                      └──────┬──────┘
+                                                                             ▼
+                                                                      Threat Score &
+                                                                      Explainability
+                                                                             │
+                                                                             ▼
+                                                                     [SOC Dashboard &
+                                                                     Incident Response]
 ```
 
 ---
 
-## 🛠️ Complete Technology Stack
+## 3. Security Architecture
 
-SecureCloud uses a carefully curated stack to provide security, speed, and real-time intelligence:
-
-### Frontend
-- **Framework & Runtime**: React 18 (`react`, `react-dom`, `react-router-dom` v6)
-- **Build Tool**: Vite 5 with Hot Module Replacement & production chunk optimization
-- **Styling**: Vanilla CSS & Tailwind CSS dark theme design system
-- **Icons**: Lucide React (`lucide-react`)
-- **Telemetry Visualizer**: HTML5 Canvas 2D API for continuous harmonic telemetry waveforms
-- **Acoustic Defense**: HTML5 Web Audio API synthesizing military base breach sirens client-side without external media assets
-
-### Backend & Security
-- **Web Engine**: FastAPI (ASGI) on Uvicorn with asynchronous worker threading
-- **Validation**: Pydantic v2 schemas for request/response serialization
-- **Database ORM**: SQLAlchemy 2.0 with connection pooling and automated schema management
-- **Database Engine**: SQLite (embedded production-synced) / PostgreSQL (`psycopg2-binary`)
-- **Authentication**: JWT (`pyjwt`), Bcrypt (`bcrypt`), and Dual-Admin Authorization Keys
-- **Zero-Knowledge Cryptography**: `cryptography` (AES-256-GCM with authenticated tags, PBKDF2-HMAC-SHA256 key derivation with 100,000 iterations)
-- **System Monitoring**: `psutil` (real-time CPU, RAM, and disk telemetry)
-
-### Machine Learning & Static Heuristics
-- **Inference Model**: LightGBM (`lightgbm>=4.3.0`) trained on PE/static heuristic feature sets
-- **Pipelines**: Scikit-learn (`scikit-learn>=1.4.0`), Joblib (`joblib`)
-- **Data Math**: NumPy (`numpy`), Pandas (`pandas`)
-- **Static Feature Extractor**: 30+ structural metrics including Shannon entropy, magic byte verification, MIME validation, double extension traps, encoded script signatures, and macro heuristics
-
-### Document Parsers & Viewers
-- **DOCX**: `python-docx` and `mammoth` (HTML paragraph and table extraction)
-- **XLSX**: `openpyxl` (multisheet spreadsheet grid extraction)
-- **PPTX**: `python-pptx` (slide-by-slide structure extraction)
-- **PDF & Images**: `Pillow`, `reportlab`, `fpdf2`, native PDF streaming
-- **Source Code & Binary**: Safe syntax highlight and raw hexadecimal byte inspector
+- **Zero Hardcoded Secrets**: All fallback administrative passwords and hardcoded codes (e.g. `994422`) have been removed. Access control is enforced server-side using verified roles: `USER`, `ADMIN`, and `SECURITY_ANALYST`.
+- **Brute-Force Protection & Rate Limiting**: In-memory sliding-window rate limiting on authentication routes (maximum 5 failed attempts per 5 minutes per IP/account before temporary lockout).
+- **Quarantine Enclave Isolation**: Files flagged as malicious or quarantined cannot be downloaded, previewed, or streamed by non-administrative users. Storage paths and S3 object keys are restricted.
+- **HTTP Security Headers**: Enforces `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `X-XSS-Protection: 1; mode=block`, and `Referrer-Policy: strict-origin-when-cross-origin`.
+- **Cryptographic File Integrity**: SHA-256, SHA-1, and MD5 cryptographic digests calculated on all ingested files for integrity verification and threat intelligence deduplication.
 
 ---
 
-## ⚡ Key Capabilities & Security Controls
+## 4. ML Architecture
 
-### 1. Format-Preserving, Byte-Exact File Viewer
-- **Zero Byte Distortion**: The original bytes are stored strictly unmodified. Downloads verify identical SHA-256 hashes (`HASH_PRE == HASH_POST`).
-- **Rich Document Rendering**: True structured previews for `.docx`, `.xlsx`, `.pptx`, `.pdf`, code files (`.py`, `.js`, `.json`, `.html`, etc.), images, audio, video, and safe binary hex inspect.
-
-### 2. Zero-Knowledge Confidential Vault with Progressive Lockout
-- **Client/PIN Encryption**: Files are encrypted with AES-256-GCM. System administrators cannot access or decrypt raw content without the user's secret PIN.
-- **Stateful Exponential Lockout**: Protects against brute-force attacks. Failed attempts trigger timed lockouts (e.g., 30 minutes, 2 hours) with an active countdown timer.
-- **Resilient Countdown Engine**: Standardized ISO 8601 UTC timestamps prevent client-side parsing failures and ensure accurate countdown display.
-
-### 3. Secure Soft-Delete Recycle Bin with Accurate IST Timestamps
-- **Isolated Staging**: Soft-deleted files are isolated in the Recycle Bin and cannot be executed or previewed until restored.
-- **Indian Standard Time (IST)**: All deletion events are formatted into readable IST timestamps (e.g., `09 Sep 2026, 02:34:07 PM IST`), with dual backend formatting and client-side locale validation.
-
-### 4. Admin Multi-User Ingestion Hub & Intrinsic Health Scores
-- **Admin Ingestion Telemetry**: Admins can stage and ingest files into specific user vaults with full cryptographic audit trails.
-- **Intrinsic Health Scoring**: Files with low ML threat probability display an accurate **Intrinsic Health Score** (e.g., a file with a `4.5%` threat score displays an intrinsic health score of `95.5%`), providing clear risk transparency.
-
-### 5. SOC Threat Intelligence & Correlation Engine
-- **Event-Driven Correlation**: Deterministically correlates IOCs, anomalous login attempts, brute-force patterns, and payload signatures without random numbers.
-- **4 Actionable SOC Remediation Policies**:
-  1. **Ingress Firewall Defense**: Blacklists offending IP addresses in the SOC Firewall.
-  2. **Cryptographic Sandbox Isolation**: Quarantines high-risk payload hashes into the AES-256 Quarantine Vault.
-  3. **Identity & Access Management (IAM)**: Enforces mandatory Two-Factor Authentication (2FA) on target accounts.
-  4. **Session & Distribution Broker**: Revokes exposed public distribution share tokens and isolates session perimeters.
-- **Full Containment**: Executing countermeasure vectors systematically reduces the incident threat score down to `0.0% (Clean)`, automatically updating linked incident records and audit logs.
-
-### 6. Interactive Sentinel VM Security Console
-- **Fluid Telemetry Waveforms**: Real-time canvas waveform animations generated using continuous trigonometric harmonic functions without artificial random jitter.
-- **Military Breach Alarm**: Includes a synthetic base breach siren powered by the Web Audio API with volume and mute controls.
-
-### 7. Strict Multi-Tenant Portal Isolation
-- **Role Enforcement**: Server-side verification ensures user credentials cannot authenticate to the admin portal, and admin accounts cannot log into the user portal, preventing horizontal and vertical privilege escalation.
+- **Model**: Lightweight gradient-boosted decision tree (`LightGBM`, model file ~645 KB).
+- **Compute**: Runs purely on CPU. No GPU required, load time < 50ms, inference latency < 25ms.
+- **In-Memory Loading**: Loaded once during application initialization into memory rather than on every HTTP request.
+- **Dataset Strategy**: Small benchmark feature metadata under 50 MB containing static PE and document features.
+- **Inference Pipeline**:
+  1. Calculates Shannon Entropy ($0.0 \le H \le 8.0$) across byte frequency distributions.
+  2. Inspects Portable Executable (PE) headers (MZ signatures, import tables, section characteristics).
+  3. Checks MIME type vs. magic bytes consistency.
+  4. Generates a normalized continuous threat probability between 0.0% and 100.0%.
 
 ---
 
-## 📁 Repository Directory Structure
+## 5. Malware Scanning Architecture
+
+SecureCloud implements an honest multi-layer malware and threat analysis pipeline:
 
 ```
-SECURECLOUD/
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── auth.py             # User & Admin authentication, 2FA TOTP, session validation
-│   │   │   ├── files.py            # Uploads, streaming download, previewers, renaming, versioning
-│   │   │   ├── confidential.py     # AES-256-GCM Zero-Knowledge Vault & Progressive Lockout
-│   │   │   ├── recycle_bin.py      # Soft-delete staging, restoration, IST time formatting
-│   │   │   ├── shares.py           # Expiring distribution share links
-│   │   │   ├── soc.py              # SOC Dashboard, Ingestion Hub, Trust Registry, Telemetry
-│   │   │   └── notifications.py    # Security alerts and user activity feeds
-│   │   ├── models/                 # SQLAlchemy database models (14+ relational tables)
-│   │   ├── schemas/                # Pydantic data validation schemas
-│   │   ├── security/               # AES-GCM cryptography, Bcrypt hashing, JWT handlers
-│   │   ├── services/               # Threat Intel Service, Risk Engine, Audit Logger, Storage Service
-│   │   ├── database.py             # Engine initialization, session makers
-│   │   └── main.py                 # FastAPI application definition and middleware
-│   ├── requirements.txt            # Python production dependencies
-│   └── run.py                      # Production startup entrypoint
-├── frontend/
-│   ├── src/
-│   │   ├── api/                    # Centralized resilient API clients (authApi, fileApi, adminApi)
-│   │   ├── components/             # Reusable UI components:
-│   │   │   ├── FileViewerModal.jsx # DOCX, XLSX, PPTX, PDF, Code, Video, Audio, Hex viewers
-│   │   │   ├── PinUnlockModal.jsx  # Zero-knowledge PIN entry with lockout integration
-│   │   │   ├── LockoutCountdown.jsx# Multi-strategy timer parser
-│   │   │   ├── AdminIngestionModal.jsx # Ingestion vector audit & Intrinsic Health scores
-│   │   │   ├── SecurityDetailsModal.jsx# Static heuristics, ML threat probabilities & health
-│   │   │   └── Navbar.jsx          # Role-aware responsive navigation header
-│   │   ├── pages/                  # Application views:
-│   │   │   ├── Login.jsx           # Portal selector, Captcha, Dual-Auth Key recovery
-│   │   │   ├── MyFiles.jsx         # User file manager, upload drops, threat badges
-│   │   │   ├── ConfidentialVault.jsx # Encrypted zero-knowledge vault
-│   │   │   ├── RecycleBin.jsx      # Soft-delete staging with IST timestamps
-│   │   │   ├── SharedLinks.jsx     # Active distribution shares
-│   │   │   ├── PasswordSaves.jsx   # Client-side vault key history
-│   │   │   ├── UserActivity.jsx    # User audit log feed
-│   │   │   └── admin/              # SOC views (Dashboard, Ingestion, Threat Correlation, Sentinel VM, etc.)
-│   │   ├── context/                # AppContext (modals, audio, toasts), AuthContext
-│   │   ├── App.jsx                 # Route definitions and role guards
-│   │   └── main.jsx                # React DOM root mounting
-│   ├── package.json                # Frontend scripts and dependencies
-│   └── vite.config.js              # Vite bundler configuration
-├── ml/
-│   ├── feature_extractor.py        # 30+ static parameter and Shannon entropy extractor
-│   ├── predict.py                  # LightGBM inference engine
-│   └── trained_models/             # Persisted ML model weights
-├── storage/                        # Isolated file system vaults
-│   ├── uploads/                    # Active user storage (UUID namespaced)
-│   ├── confidential/               # PIN-encrypted AES-256-GCM blobs
-│   ├── quarantine/                 # Quarantined threat files
-│   └── recycle_bin/                # Staged soft-deleted files
-├── Dockerfile                      # Production multi-stage Docker build
-├── railway.json                    # Railway deployment manifest
-└── README.md                       # Comprehensive system documentation
+UPLOAD
+  │
+  ▼
+[ 1. File Structure & Magic-Byte Validation ]
+  │
+  ▼
+[ 2. ClamAV Daemon Signature Inspection ]
+  ├─ Malicious Signature Matched ──► QUARANTINE (Score: 99%, Status: MALICIOUS)
+  └─ Clean / Daemon Unavailable ──► Continue to Layer 3
+  │
+  ▼
+[ 3. Deterministic Static Heuristics ]
+  ├─ Double extension detection (e.g. .pdf.exe)
+  ├─ Executable section entropy (> 7.2 indicates packing/obfuscation)
+  ├─ Known script/macro injection indicators
+  │
+  ▼
+[ 4. LightGBM Static Feature Classification ]
+  │
+  ▼
+[ Threat Score Fusion & Reason Compilation ]
+  │
+  ▼
+VERDICT: CLEAN / LOW RISK / SUSPICIOUS / HIGH RISK / QUARANTINED
+```
+
+> **Technically Honest Scanner Disclosure**: If the ClamAV daemon is unconfigured or unreachable in the execution environment, the scanner reports:
+> `"Signature scanner unavailable; static/ML analysis continued."`
+> The application will **never** fake a signature scan result.
+
+---
+
+## 6. SOC Architecture
+
+The **Security Operations Center (SOC) Dashboard** monitors live database records and audit streams:
+
+- **Metrics Cards**:
+  - `TOTAL FILES SCANNED`
+  - `THREATS DETECTED`
+  - `FILES QUARANTINED`
+  - `ACTIVE INCIDENTS`
+  - `HIGH-RISK USERS`
+  - `BLOCKED IPs`
+- **Security Event Correlation**: Real-time event log tracking failed logins, suspicious uploads, share revocations, and IP blocks.
+- **Sentinel Security Monitoring Console**: Real-time visualization of scan activity, queue depth, and platform telemetry (CPU, Memory, Disk usage from `psutil`).
+
+---
+
+## 7. Supabase Authentication
+
+SecureCloud integrates with Supabase Auth:
+- Validates Supabase JWTs passed in `Authorization: Bearer <token>` via `SUPABASE_JWT_SECRET`.
+- Derives user identity directly from verified token claims (`sub`, `email`, `app_metadata.role`).
+- Automatically provisions corresponding relational user profiles in PostgreSQL.
+- Eliminates reliance on client-supplied user IDs.
+
+---
+
+## 8. Object Storage
+
+File persistence is managed through an abstracted storage interface:
+
+- **S3-Compatible Storage**: Configured via `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, and `S3_REGION`.
+- **User Isolation**: Object keys follow the convention `uploads/{user_id}/{unique_filename}`.
+- **Presigned URLs**: Secure, time-limited download URLs generated server-side. Credentials are never exposed to the frontend.
+- **Local Fallback**: If S3 environment variables are unset, the system automatically uses application-managed storage in `storage/uploads/` for offline development.
+
+---
+
+## 9. Threat Scoring & Explainability
+
+Instead of providing an unverified number, SecureCloud exposes the exact breakdown:
+
+```
+THREAT SCORE: 96% (CRITICAL RISK)
+
+REASONS:
+✓ Dangerous double extension detected: disguised as '.pdf' but executes as '.sh'
+✓ High Shannon entropy (7.99/8.00) indicates packed or encrypted binary payload
+✓ MIME / Extension mismatch detected
+
+DETECTION LAYERS:
+- [ClamAV Signature Scanner]: Unavailable (daemon offline)
+- [Heuristic Static Analysis]: Score 100 / 100 (Triggered 2 rules)
+- [LightGBM ML Classifier]: Malicious Probability 94.8%
+- [Final Verdict]: CRITICAL DANGER RISK (QUARANTINED)
 ```
 
 ---
 
-## 🚀 Local Installation & Setup
+## 10. Incident Response Playbooks
+
+Administrative and SOC operators can execute one-click mitigations directly affecting backend state:
+1. **Quarantine File**: Restricts file access and moves payload to quarantine staging.
+2. **Revoke Share Token**: Immediately invalidates public share URLs.
+3. **Block IP**: Adds client IP to the persistent firewall blacklist.
+4. **Force 2FA**: Enforces multi-factor authentication requirement on flagged accounts.
+5. **Restore File**: Allows authorized administrators to release false positives.
+
+---
+
+## 11. Environment Variables
+
+Create a `.env` file in the project root based on `.env.example`:
+
+```bash
+# Server Port & Environment
+PORT=8000
+ENVIRONMENT=production
+
+# Database (Supabase PostgreSQL or local SQLite)
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres
+
+# Supabase Auth
+SUPABASE_URL=https://[PROJECT_REF].supabase.co
+SUPABASE_ANON_KEY=[ANON_KEY]
+SUPABASE_SERVICE_ROLE_KEY=[SERVICE_ROLE_KEY]
+SUPABASE_JWT_SECRET=[JWT_SECRET_FROM_SUPABASE_DASHBOARD]
+
+# S3-Compatible Object Storage (Cloudflare R2 / AWS S3 / MinIO)
+S3_ENDPOINT=https://[ACCOUNT_ID].r2.cloudflarestorage.com
+S3_ACCESS_KEY=[ACCESS_KEY_ID]
+S3_SECRET_KEY=[SECRET_ACCESS_KEY]
+S3_BUCKET=securecloud-vault
+S3_REGION=auto
+
+# ClamAV Daemon (Optional - if daemon is available)
+CLAMAV_HOST=127.0.0.1
+CLAMAV_PORT=3310
+
+# CORS Allowed Origins (Comma-separated)
+CORS_ORIGINS=https://securecloud-app-production.up.railway.app
+```
+
+---
+
+## 12. Local Development
 
 ### Prerequisites
-- **Python**: Version 3.10, 3.11, or 3.12
-- **Node.js**: Version 18+ and npm
-- **Git**
+- Python 3.10+
+- Node.js 18+
 
-### 1. Clone the Repository
+### Step 1: Backend Setup
 ```bash
-git clone https://github.com/S-Mitun/SECURECLOUD.git
-cd SECURECLOUD
-```
-
-### 2. Set Up Python Backend
-```bash
-# Create and activate a virtual environment
-python -m venv venv
-
-# On Windows:
-.\venv\Scripts\activate
-# On Linux/macOS:
-source venv/bin/activate
-
-# Install dependencies
+# Navigate to backend and install requirements
 pip install -r backend/requirements.txt
+
+# Start FastAPI development server
+python backend/run.py
 ```
 
-### 3. Set Up React Frontend
+### Step 2: Frontend Setup
 ```bash
 cd frontend
 npm install
-cd ..
-```
-
-### 4. Run Locally
-
-#### Option A: Quickstart Script (Windows)
-```powershell
-.\start_securecloud.ps1
-```
-
-#### Option B: Manual Two-Terminal Run
-**Terminal 1 — Backend:**
-```bash
-python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-**Terminal 2 — Frontend:**
-```bash
-cd frontend
 npm run dev
 ```
 
-The frontend will start at `http://localhost:5173` and communicate with the backend at `http://127.0.0.1:8000`.
+The frontend will run on `http://localhost:5173`, proxying API calls to `http://localhost:8000`.
 
 ---
 
-## 🧪 Testing & Automated Verification
+## 13. Railway Deployment
 
-SecureCloud includes automated test suites covering authentication, role isolation, ML threat scoring, and IST time conversions:
+SecureCloud is containerized with a production multi-stage `Dockerfile`:
+- **Stage 1 (node:20-alpine)**: Builds the Vite production bundle into `frontend/dist`.
+- **Stage 2 (python:3.11-slim)**: Copies backend, ML models, scanner service, and compiled assets, running `python backend/run.py`.
+
+### Railway Configuration:
+- **Build**: Uses `Dockerfile`.
+- **Start Command**: `python backend/run.py`
+- **Health Check Path**: `/health` (Timeout: 30s)
+- **Port**: Bound dynamically to `0.0.0.0:$PORT`.
+
+---
+
+## 14. Technical Limitations & Disclosures
+
+- **Prototype Scope**: This project is designed as an educational and hackathon demonstration platform. It is not an enterprise-grade SIEM or replacement for a commercial EDR.
+- **ClamAV Footprint**: ClamAV signature databases require ~1.5 GB of RAM. In low-memory Railway containers (512 MB), ClamAV will be unreachable and the system will honestly failover to static/ML analysis.
+- **No Active Sandbox**: Untrusted files are strictly analyzed statically. SecureCloud **never** executes untrusted binaries in an active sandbox.
+- **Sentinel Console**: The Sentinel Console is a security telemetry visualizer for system metrics and scan queues; it is not a hardware-virtualized hypervisor.
+
+---
+
+## 15. Hackathon Demo Procedure
+
+To demonstrate the full SecureCloud pipeline live:
+
+1. **Step 1 - Authentication**:
+   - Log into the **User Portal** (`user_demo` / `UserPass123!`).
+2. **Step 2 - Upload Normal File**:
+   - Upload `demo_test_files/clean_quarterly_report.txt`.
+   - Result: Verified CLEAN, low threat score (~3.2%), persisted in storage.
+3. **Step 3 - Upload Suspicious File**:
+   - Upload `demo_test_files/suspicious_invoice_receipt.pdf.sh`.
+   - Result: Multi-layer scanner flags double extension and shell indicators. Threat score elevates to 96%.
+   - Verdict: Automatically quarantined, download blocked.
+4. **Step 4 - Review Security Explanation**:
+   - Click **Security Details** on the file to inspect the 4 detection layers and verified reasons.
+5. **Step 5 - Incident Response in SOC**:
+   - Switch to **Admin SOC Portal** (`admin_demo` / `AdminPass123!`).
+   - Observe active incident in SOC Dashboard.
+   - Inspect event logs, view threat telemetry in Sentinel Console, and confirm quarantine isolation.
+
+---
+
+## 16. Safe Demonstration Test Files
+
+To evaluate the system safely without real malware, use the provided test generator:
 
 ```bash
-# Run acceptance test suite
-python scripts/test_acceptance.py
-
-# Verify role isolation and portal boundaries
-python scratch/verify_prod_portal_isolation.py
+python scripts/create_demo_test_files.py
 ```
 
----
-
-## 📜 API Reference Highlights
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/api/auth/login` | Public | Multi-portal login with role enforcement and mock captcha |
-| `POST` | `/api/auth/register` | Public | New user registration |
-| `GET` | `/api/files/list` | User | Lists active files with calculated ML threat scores |
-| `POST` | `/api/files/upload` | User | Uploads and scans file with 30+ static heuristics & ML |
-| `GET` | `/api/confidential/list` | User | Lists client-encrypted files in Zero-Knowledge Vault |
-| `POST` | `/api/confidential/unlock` | User | Validates PIN and returns decrypted content for viewing |
-| `GET` | `/api/recycle-bin/list` | User | Lists soft-deleted files with formatted IST timestamps |
-| `POST` | `/api/recycle-bin/{id}/restore`| User | Restores file from Recycle Bin back to active workspace |
-| `GET` | `/api/soc/dashboard` | Admin | Overall SOC telemetry, breach stats, and file metrics |
-| `GET` | `/api/soc/files/{id}/security-details` | Admin | Returns genuine ML threat scores and Intrinsic Health scores |
-| `GET` | `/api/soc/threat-intelligence/correlation` | Admin | Deterministic IOC correlation clusters |
-| `POST` | `/api/soc/threat-intelligence/mitigate-cluster`| Admin | Executes targeted SOC countermeasures (Firewall, Sandbox, 2FA, Shares) |
-| `GET` | `/health` | Public | Liveness probe for deployment health checks |
+Generated fixtures in `demo_test_files/`:
+- `clean_quarterly_report.txt`: Benign document (Clean verdict).
+- `suspicious_invoice_receipt.pdf.sh`: Double extension test (Suspicious/Quarantined).
+- `safe_high_risk_demo_fixture.pdf`: Disguised PE header simulation (High Risk/Quarantined).
 
 ---
 
-## 🔒 Security Notice
+## 17. License
 
-SecureCloud inspects files using static feature extraction, heuristic pattern matching, and machine learning inference. Uploaded files are analyzed in a sandboxed staging process without executing untrusted binaries. Client-side confidential documents are encrypted using AES-256-GCM, ensuring that even administrative accounts cannot view zero-knowledge vault contents.
-
----
-
-## 👨‍💻 Author & Maintainer
-- **Mitun S** — [GitHub: @S-Mitun](https://github.com/S-Mitun)  
-- **Repository**: [https://github.com/S-Mitun/SECURECLOUD](https://github.com/S-Mitun/SECURECLOUD)
+Distributed under the MIT License. See `LICENSE` for more information.

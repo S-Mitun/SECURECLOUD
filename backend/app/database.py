@@ -42,7 +42,7 @@ def ensure_schema_migrated():
         if "totp_secret" not in cols:
             cursor.execute("ALTER TABLE users ADD COLUMN totp_secret VARCHAR(32)")
         if "admin_security_code" not in cols:
-            cursor.execute("ALTER TABLE users ADD COLUMN admin_security_code VARCHAR(16) DEFAULT '994422'")
+            cursor.execute("ALTER TABLE users ADD COLUMN admin_security_code VARCHAR(16)")
         if "last_login_ip" not in cols:
             cursor.execute("ALTER TABLE users ADD COLUMN last_login_ip VARCHAR(45) DEFAULT '127.0.0.1'")
 

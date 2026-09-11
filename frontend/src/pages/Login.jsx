@@ -18,77 +18,23 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
-  const [adminSecurityCode, setAdminSecurityCode] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showAdminPin, setShowAdminPin] = useState(false);
-  const [captchaChecked, setCaptchaChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [totpPrompt, setTotpPrompt] = useState(null); // { email, user, temp_token, two_factor_code }
   const [totpCode, setTotpCode] = useState('');
 
-  // Forgot Admin Dual Auth Key state
-  const [showForgotKeyModal, setShowForgotKeyModal] = useState(false);
-  const [forgotKeyPassword, setForgotKeyPassword] = useState('');
-  const [showForgotKeyPassword, setShowForgotKeyPassword] = useState(false);
-  const [retrievedKey, setRetrievedKey] = useState(null);
-  const [retrieveLoading, setRetrieveLoading] = useState(false);
-
-  const handleRetrieveKeySubmit = async (e) => {
-    e.preventDefault();
-    if (!email.trim()) {
-      showToast('Please enter your Administrator email in the sign-in form first.', 'warning');
-      return;
-    }
-    if (!forgotKeyPassword.trim()) {
-      showToast('Please enter your account password.', 'warning');
-      return;
-    }
-
-    setRetrieveLoading(true);
-    try {
-      const res = await authApi.retrieveAdminKey({
-        email: email.trim(),
-        password: forgotKeyPassword.trim()
-      });
-      setRetrievedKey(res.admin_security_code);
-      showToast('Admin Dual Auth Key verified!', 'success');
-    } catch (err) {
-      showToast(err.message || 'Incorrect password. Verification failed.', 'error');
-    } finally {
-      setRetrieveLoading(false);
-    }
-  };
-
-  const handleApplyRetrievedKey = () => {
-    if (retrievedKey) {
-      setAdminSecurityCode(retrievedKey);
-      setShowForgotKeyModal(false);
-      setForgotKeyPassword('');
-      setRetrievedKey(null);
-      showToast('Dual Auth Key auto-filled into login form!', 'success');
-    }
-  };
-
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    if (!captchaChecked) {
-      showToast('Please check the "I\'m not a robot" security verification.', 'warning');
-      return;
-    }
-    const effectiveAdminCode = portal === 'ADMIN' ? (adminSecurityCode.trim() || '994422') : null;
-
     setLoading(true);
     try {
       const res = await login({
         email,
         password,
         portal,
-        mock_captcha_verified: captchaChecked,
-        totp_code: totpCode || null,
-        admin_security_code: effectiveAdminCode
+        totp_code: totpCode || null
       });
 
       if (res && res.requires_2fa) {
@@ -103,7 +49,7 @@ export function Login() {
       }
 
       showToast(`Authenticated successfully as ${res.user.username}!`, 'success');
-      if (res.user.role === 'ADMIN') {
+      if (res.user.role === 'ADMIN' || res.user.role === 'SECURITY_ANALYST') {
         navigate('/admin');
       } else {
         navigate('/my-files');
@@ -128,14 +74,12 @@ export function Login() {
         email,
         password,
         portal,
-        mock_captcha_verified: true,
-        totp_code: totpCode.trim(),
-        admin_security_code: portal === 'ADMIN' ? adminSecurityCode : null
+        totp_code: totpCode.trim()
       });
 
       showToast(`2FA Verified! Welcome back, ${res.user.username}.`, 'success');
       setTotpPrompt(null);
-      if (res.user.role === 'ADMIN') {
+      if (res.user.role === 'ADMIN' || res.user.role === 'SECURITY_ANALYST') {
         navigate('/admin');
       } else {
         navigate('/my-files');
@@ -149,23 +93,17 @@ export function Login() {
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    if (!captchaChecked) {
-      showToast('Please complete the verification checkbox.', 'warning');
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await register({
         username,
         email,
         password,
-        role: portal === 'ADMIN' ? 'ADMIN' : 'USER',
-        admin_security_code: portal === 'ADMIN' ? (adminSecurityCode || '994422') : undefined
+        role: portal === 'ADMIN' ? 'ADMIN' : 'USER'
       });
 
       showToast(`Account created! Welcome, ${res.user.username}.`, 'success');
-      if (res.user.role === 'ADMIN') {
+      if (res.user.role === 'ADMIN' || res.user.role === 'SECURITY_ANALYST') {
         navigate('/admin');
       } else {
         navigate('/my-files');
@@ -405,61 +343,15 @@ export function Login() {
               </div>
             </div>
 
-            {/* Admin Dual Auth Key for Admin Portal */}
-            {portal === 'ADMIN' && (
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-cyan-300">
-                    Admin Dual Auth Key <span className="text-slate-400 font-normal font-mono text-[10px]">(Default: 994422)</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForgotKeyModal(true);
-                      setRetrievedKey(null);
-                      setForgotKeyPassword('');
-                    }}
-                    className="text-[11px] text-cyan-400 hover:underline font-mono"
-                  >
-                    Forgot Auth Key?
-                  </button>
-                </div>
-                <div className="relative">
-                  <input
-                    type={showAdminPin ? 'text' : 'password'}
-                    maxLength={32}
-                    value={adminSecurityCode}
-                    onChange={(e) => setAdminSecurityCode(e.target.value)}
-                    placeholder="Enter Admin Dual Auth Key (Default: 994422)..."
-                    className="w-full bg-slate-900 border border-cyan-500/50 rounded-lg pl-9 pr-10 py-2.5 text-xs sm:text-sm text-cyan-200 font-mono tracking-wider focus:outline-none focus:border-cyan-400"
-                  />
-                  <KeyRound className="w-4 h-4 text-cyan-400 absolute left-3 top-3" />
-                  <button
-                    type="button"
-                    onClick={() => setShowAdminPin(!showAdminPin)}
-                    className="text-slate-400 hover:text-white absolute right-3 top-3"
-                    title={showAdminPin ? 'Hide Key' : 'Show Key'}
-                  >
-                    {showAdminPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+            {/* Rate Limiting & Protection Indicator */}
+            <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>Rate Limiting & Threat Protection</span>
               </div>
-            )}
-
-            {/* CAPTCHA / I'm not a robot checkbox */}
-            <div className="p-3 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
-              <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={captchaChecked}
-                  onChange={(e) => setCaptchaChecked(e.target.checked)}
-                  className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
-                />
-                <span className="text-xs text-slate-200 font-medium">I'm not a robot</span>
-              </label>
-              <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-sky-400" /> reCAPTCHA v2
-              </div>
+              <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
+                ACTIVE
+              </span>
             </div>
 
             <button
@@ -480,7 +372,7 @@ export function Login() {
             </button>
 
             <div className="text-center text-[11px] text-slate-500 pt-2 font-mono">
-              Default Admin: admin@securecloud.com / AdminPass123! (Dual Auth Key: 994422)
+              Role-Based Access Control • Server-Side Session Validation
             </div>
           </form>
         ) : null}
@@ -541,51 +433,15 @@ export function Login() {
               </div>
             </div>
 
-            {portal === 'ADMIN' && (
-              <div>
-                <label className="block text-xs font-semibold text-cyan-300 mb-1.5 flex items-center justify-between">
-                  <span>Set Admin Dual-Auth Password / Key</span>
-                  <span className="text-[10px] text-cyan-400 font-mono font-normal">Permanent Key (Set Once)</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showAdminPin ? 'text' : 'password'}
-                    maxLength={32}
-                    value={adminSecurityCode}
-                    onChange={(e) => setAdminSecurityCode(e.target.value)}
-                    placeholder="Enter user-defined Dual Auth password..."
-                    className="w-full bg-slate-900 border border-cyan-500/50 rounded-lg pl-9 pr-10 py-2.5 text-xs sm:text-sm text-cyan-200 font-mono tracking-wider focus:outline-none focus:border-cyan-400"
-                    required
-                  />
-                  <KeyRound className="w-4 h-4 text-cyan-400 absolute left-3 top-3" />
-                  <button
-                    type="button"
-                    onClick={() => setShowAdminPin(!showAdminPin)}
-                    className="text-slate-400 hover:text-white absolute right-3 top-3"
-                    title={showAdminPin ? 'Hide PIN' : 'Show PIN'}
-                  >
-                    {showAdminPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  🔒 Fixed identification key for your admin account. Stored permanently and cannot be changed or reset later.
-                </p>
+            {/* Protection Indicator */}
+            <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                <ShieldCheck className="w-4 h-4 text-sky-400" />
+                <span>Account Registration Guard</span>
               </div>
-            )}
-
-            <div className="p-3 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
-              <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={captchaChecked}
-                  onChange={(e) => setCaptchaChecked(e.target.checked)}
-                  className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
-                />
-                <span className="text-xs text-slate-200 font-medium">I'm not a robot</span>
-              </label>
-              <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-sky-400" /> reCAPTCHA v2
-              </div>
+              <span className="text-[10px] text-sky-400 font-mono font-bold bg-sky-950/60 px-2 py-0.5 rounded border border-sky-500/30">
+                ACTIVE
+              </span>
             </div>
 
             <button
@@ -676,103 +532,6 @@ export function Login() {
           </form>
         )}
       </div>
-
-      {/* Forgot Admin Dual Auth Key Modal */}
-      {showForgotKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card max-w-md w-full border border-cyan-500/50 bg-slate-950 shadow-2xl p-6 relative space-y-4 animate-scale-up">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5 text-cyan-300 font-bold text-sm">
-                <KeyRound className="w-5 h-5 text-cyan-400" />
-                <span>Retrieve Admin Dual-Auth Key</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => { setShowForgotKeyModal(false); setRetrievedKey(null); setShowForgotKeyPassword(false); }}
-                className="text-slate-400 hover:text-white text-xs font-mono"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              To securely retrieve and view your administrator account's fixed Dual Auth Key, enter your account password below:
-            </p>
-
-            <form onSubmit={handleRetrieveKeySubmit} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-mono text-slate-400 mb-1">Admin Email Address</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@securecloud.com"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-mono text-slate-400 mb-1">Account Password</label>
-                <div className="relative">
-                  <input
-                    type={showForgotKeyPassword ? 'text' : 'password'}
-                    value={forgotKeyPassword}
-                    onChange={(e) => setForgotKeyPassword(e.target.value)}
-                    placeholder="Enter your account password..."
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-3 pr-10 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotKeyPassword(!showForgotKeyPassword)}
-                    className="text-slate-400 hover:text-white absolute right-3 top-2.5"
-                    title={showForgotKeyPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showForgotKeyPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {retrievedKey && (
-                <div className="p-3 bg-cyan-950/60 border border-cyan-500/40 rounded-xl space-y-2">
-                  <div className="text-[10px] text-cyan-400 font-mono font-bold uppercase">Your Fixed Dual-Auth Key:</div>
-                  <div className="flex items-center justify-between bg-slate-950 p-2.5 rounded-lg border border-cyan-500/50">
-                    <span className="text-base font-black font-mono tracking-widest text-cyan-300">
-                      {retrievedKey}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleApplyRetrievedKey}
-                      className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-bold font-mono transition"
-                    >
-                      Auto-Fill Key
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => { setShowForgotKeyModal(false); setRetrievedKey(null); setShowForgotKeyPassword(false); }}
-                  className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-400 rounded-lg text-xs font-mono"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={retrieveLoading}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg text-xs font-mono flex items-center gap-1.5 shadow"
-                >
-                  {retrieveLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-                  <span>Verify & View Key</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

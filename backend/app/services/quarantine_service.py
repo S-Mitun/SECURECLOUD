@@ -30,11 +30,16 @@ class QuarantineService:
         quarantine_filename = f"quarantine_{file_hash[:16]}_{safe_name}"
         quarantine_dest = os.path.join(QUARANTINE_DIR, quarantine_filename)
 
+        from backend.app.services.storage_service import save_file_bytes
         if raw_bytes is not None:
-            with open(quarantine_dest, "wb") as f:
-                f.write(raw_bytes)
+            quarantine_dest = save_file_bytes(f"quarantine/{quarantine_filename}", raw_bytes)
         elif file_path and os.path.exists(file_path):
-            shutil.move(file_path, quarantine_dest)
+            with open(file_path, "rb") as fp:
+                quarantine_dest = save_file_bytes(f"quarantine/{quarantine_filename}", fp.read())
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
 
         q_entry = QuarantineFile(
             file_id=file_id,
