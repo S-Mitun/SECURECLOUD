@@ -429,20 +429,6 @@ function togglePasswordVisibility(inputId, iconId) {
   }
 }
 
-// CAPTCHA interaction helper
-function handleCaptchaToggle(el) {
-  if (el && el.checked) {
-    const spinner = document.getElementById("captcha-spinner");
-    if (spinner) {
-      spinner.classList.remove("hidden");
-      lucide.createIcons();
-      setTimeout(() => {
-        spinner.classList.add("hidden");
-      }, 350);
-    }
-  }
-}
-
 // Live 1-Second Countdown Timer for Shared Links
 let shareTimerInterval = null;
 function startShareCountdownTimer() {
@@ -2496,30 +2482,6 @@ function renderModalBody(modal) {
               </div>
             </div>
 
-            <!-- Realistic "I'm not a robot" CAPTCHA Box -->
-            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-3.5 flex items-center justify-between shadow-inner">
-              <label class="flex items-center gap-3 cursor-pointer select-none">
-                <div class="relative w-6 h-6 flex items-center justify-center">
-                  <input 
-                    type="checkbox" 
-                    id="mock-captcha" 
-                    class="w-5 h-5 rounded border-slate-600 bg-slate-950 text-sky-500 focus:ring-sky-500 cursor-pointer accent-sky-500" 
-                    onchange="handleCaptchaToggle(this)"
-                  />
-                  <div id="captcha-spinner" class="hidden absolute inset-0 flex items-center justify-center bg-slate-900 rounded">
-                    <i data-lucide="loader-2" class="w-5 h-5 text-sky-400 animate-spin"></i>
-                  </div>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-200 font-medium">I'm not a robot</span>
-              </label>
-              <div class="flex flex-col items-end text-right">
-                <div class="flex items-center gap-1 text-[11px] font-bold text-sky-400">
-                  <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> reCAPTCHA
-                </div>
-                <div class="text-[9px] text-slate-500">Privacy - Terms</div>
-              </div>
-            </div>
-
             <button onclick="handleLoginSubmit()" class="btn-cyber w-full py-2.5 rounded-lg text-xs font-bold">
               Authenticate & Verify Role
             </button>
@@ -2809,14 +2771,9 @@ async function handleResetPasswordSubmit() {
 async function handleLoginSubmit() {
   const email = document.getElementById("login-email")?.value.trim();
   const password = document.getElementById("login-password")?.value;
-  const captcha = document.getElementById("mock-captcha")?.checked;
 
   if (!email || !password) {
     showToast("Please enter email and password.", "warning");
-    return;
-  }
-  if (!captcha) {
-    showToast("Please check the 'I\\'m not a robot' box.", "warning");
     return;
   }
 
@@ -2826,8 +2783,7 @@ async function handleLoginSubmit() {
       body: JSON.stringify({
         email,
         password,
-        portal: currentAuthPortal,
-        mock_captcha_verified: captcha
+        portal: currentAuthPortal
       })
     });
 

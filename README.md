@@ -265,12 +265,34 @@ SecureCloud is containerized with a production multi-stage `Dockerfile`:
 
 ---
 
-## 14. Technical Limitations & Disclosures
+## 14. Technical Disclosures, Disclaimers & Feature Status
 
-- **Prototype Scope**: This project is designed as an educational and hackathon demonstration platform. It is not an enterprise-grade SIEM or replacement for a commercial EDR.
-- **ClamAV Footprint**: ClamAV signature databases require ~1.5 GB of RAM. In low-memory Railway containers (512 MB), ClamAV will be unreachable and the system will honestly failover to static/ML analysis.
-- **No Active Sandbox**: Untrusted files are strictly analyzed statically. SecureCloud **never** executes untrusted binaries in an active sandbox.
-- **Sentinel Console**: The Sentinel Console is a security telemetry visualizer for system metrics and scan queues; it is not a hardware-virtualized hypervisor.
+> ### ⚠️ Mandatory Engineering Disclosures
+> - **"SecureCloud provides ML-assisted static threat classification and multi-layer file security analysis. It is not a complete antivirus, behavioral sandbox, EDR, or enterprise SIEM."**
+> - **"ClamAV signature scanning is available when the ClamAV daemon is deployed and reachable. If unavailable, SecureCloud continues with static/ML analysis and reports the scanner as unavailable."**
+> - **"Sentinel is an application-level security monitoring and incident-response console, not a physical or virtualized cybersecurity sandbox."**
+> - **"Local storage is intended as a development fallback; production deployments should use persistent S3-compatible object storage."**
+
+### Feature Implementation Matrix
+
+| Capability | Implementation Level | Notes |
+|:---|:---:|:---|
+| **Supabase Authentication** | **IMPLEMENTED** | Primary auth mechanism via `auth.users` → `public.profiles`. FastAPI verifies JWT claims server-side. |
+| **Server-Side RBAC** | **IMPLEMENTED** | `USER`, `ADMIN`, `SECURITY_ANALYST` roles validated server-side. No client-supplied IDs or roles trusted. |
+| **Cross-User Data Isolation** | **IMPLEMENTED** | Zero cross-user leakage. 403 Forbidden enforced on unauthorized download, stream, rename, delete, version, share. |
+| **Supabase Native Schema & RLS** | **IMPLEMENTED** | `scripts/supabase_migration.sql` implements `auth.users(id)` FKs, RLS policies, elevation prevention trigger, and compatibility view. |
+| **Object Storage (S3-Compatible)** | **ENVIRONMENT DEPENDENT** | S3 provider abstraction works with AWS S3, Cloudflare R2, MinIO. Operates in `LOCAL FALLBACK` if S3 environment variables are unconfigured. |
+| **Multi-Layer File Scanning** | **IMPLEMENTED** | Magic-byte checking, structural heuristics, PE analysis, and LightGBM threat classifier. |
+| **ClamAV Signature Scanner** | **ENVIRONMENT DEPENDENT** | Real integration with ClamAV daemon when running (`CLAMAV_HOST`/`PORT`). If offline, reports `UNAVAILABLE` without fabricating results. |
+| **LightGBM ML Classifier** | **IMPLEMENTED** | CPU-only model (~645 KB), loaded once at startup. Fast inference (< 25ms). Feature inputs recorded with each scan. |
+| **Threat Explainability** | **IMPLEMENTED** | Component scores, entropy, double-extension, and structural indicators mapped deterministically to verdicts. |
+| **AES-256 Quarantine Isolation** | **IMPLEMENTED** | High-risk payloads isolated into `QuarantineFile`. Non-admin access returns 403 Forbidden. |
+| **File Versioning & Rollback** | **IMPLEMENTED** | Real file versions saved and tracked by hash, size, and timestamp. Restoring a version swaps active file content. |
+| **Secure Share Links** | **IMPLEMENTED** | Cryptographic random tokens, expiration timestamp verification, active revocation, and access logging. |
+| **Sliding-Window Rate Limiting** | **IMPLEMENTED (IN-MEMORY)** | 5 failed attempts per 5-minute window before HTTP 429 lockout. Single-instance memory store. |
+| **Sentinel Monitoring Console** | **IMPLEMENTED** | Application-level telemetry, security incident lifecycle, IP blacklisting, 2FA enforcement, and audit logs. |
+| **Distributed Rate Limiting (Redis)** | **FUTURE SCOPE** | Single-instance in-memory limiter should be replaced with Redis cluster for multi-instance production. |
+| **Dynamic MicroVM Behavioral Sandbox**| **FUTURE SCOPE** | Execution of binaries in isolated microVMs (e.g. Firecracker) is beyond static analysis scope. |
 
 ---
 

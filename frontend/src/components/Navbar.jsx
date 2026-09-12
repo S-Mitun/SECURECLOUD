@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { AdminSecurityConfigModal } from './AdminSecurityConfigModal';
 import { fileApi } from '../api/fileApi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +10,6 @@ import {
 } from 'lucide-react';
 
 export function Navbar() {
-  const [showPinModal, setShowPinModal] = useState(false);
   const [adminUploading, setAdminUploading] = useState(false);
   const adminFileInputRef = useRef(null);
 
@@ -269,16 +267,6 @@ export function Navbar() {
           <div className="flex items-center gap-3">
             {user && (
               <div className="flex items-center gap-2 pl-2">
-                {user.role === 'ADMIN' && (
-                  <button
-                    onClick={() => setShowPinModal(true)}
-                    className="p-1.5 px-2.5 bg-sky-950/80 hover:bg-sky-900 border border-sky-500/40 text-sky-300 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 transition shadow"
-                    title="View Your Permanent Admin Dual-Auth Key"
-                  >
-                    <KeyRound className="w-3.5 h-3.5 text-sky-400" />
-                    <span className="hidden md:inline">Dual-Auth Key</span>
-                  </button>
-                )}
                 <div className="text-right hidden sm:block">
                   <div className="text-xs font-bold text-white">{user.username}</div>
                   <div className="text-[10px] text-slate-400 font-mono uppercase">{user.role}</div>
@@ -295,10 +283,6 @@ export function Navbar() {
           </div>
         </div>
       </header>
-
-      {showPinModal && (
-        <AdminSecurityConfigModal onClose={() => setShowPinModal(false)} />
-      )}
     </>
   );
 }

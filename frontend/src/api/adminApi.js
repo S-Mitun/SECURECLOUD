@@ -250,48 +250,6 @@ export const adminApi = {
     });
   },
 
-  // Admin Security Configuration PIN / Dual Authorization
-  getAdminSecurityCode: async () => {
-    return await apiClient('/api/soc/admin/config-code');
-  },
-
-  updateAdminSecurityCode: async (data) => {
-    const payload = typeof data === 'string' ? { admin_security_code: data } : data;
-    return await apiClient('/api/soc/admin/config-code', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-  },
-
-  updateAdminConfigPin: async (code) => {
-    return await apiClient('/api/soc/admin/config-code', {
-      method: 'POST',
-      body: JSON.stringify({ admin_security_code: code, code })
-    });
-  },
-
-  unlockAdminVault: async (targetAdminId, adminSecurityCode) => {
-    return await apiClient('/api/soc/admin/unlock-admin-vault', {
-      method: 'POST',
-      body: JSON.stringify({
-        target_admin_id: targetAdminId,
-        admin_security_code: adminSecurityCode,
-        auth_code: adminSecurityCode
-      })
-    });
-  },
-
-  verifyAdminAccess: async (targetAdminId, adminSecurityCode) => {
-    return await apiClient('/api/soc/admin/unlock-admin-vault', {
-      method: 'POST',
-      body: JSON.stringify({
-        target_admin_id: targetAdminId,
-        admin_security_code: adminSecurityCode,
-        auth_code: adminSecurityCode
-      })
-    });
-  },
-
   // Admin File Ingestion for Users
   uploadFileForUser: async (formData) => {
     return await apiClient('/api/soc/files/upload-for-user', {

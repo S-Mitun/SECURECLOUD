@@ -246,7 +246,7 @@ async def upload_file(
         }
 
     # If Safe or Suspicious -> Write Original Raw Bytes through Object Storage Provider
-    storage_key = f"users/{current_user.id}/uploads/{file_id}_{clean_filename}"
+    storage_key = f"uploads/{current_user.id}/{file_id}/{clean_filename}"
     saved_storage_path = save_file_bytes(storage_key, raw_bytes, content_type=scan_result.get("detected_mime", "application/octet-stream"))
 
     # Create Database Records
@@ -438,9 +438,11 @@ def rename_file(
     db: Session = Depends(get_db)
 ):
     """Renames an existing file."""
-    f = db.query(FileRecord).filter(FileRecord.id == file_id, FileRecord.user_id == current_user.id).first()
+    f = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not f:
         raise HTTPException(status_code=404, detail="File not found.")
+    if f.user_id != current_user.id and current_user.role.upper() != "ADMIN":
+        raise HTTPException(status_code=403, detail="Access denied. You do not have permission to rename this file.")
 
     clean_name = sanitize_filename(req.new_filename)
     old_name = f.filename
@@ -462,9 +464,11 @@ def delete_file_to_recycle_bin(
     db: Session = Depends(get_db)
 ):
     """Moves a file to Recycle Bin."""
-    f = db.query(FileRecord).filter(FileRecord.id == file_id, FileRecord.user_id == current_user.id).first()
+    f = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not f:
         raise HTTPException(status_code=404, detail="File not found.")
+    if f.user_id != current_user.id and current_user.role.upper() != "ADMIN":
+        raise HTTPException(status_code=403, detail="Access denied. You do not have permission to delete this file.")
 
     f.is_in_recycle_bin = True
 
@@ -529,9 +533,11 @@ async def upload_new_version(
     db: Session = Depends(get_db)
 ):
     """Uploads a new version of an existing file through object storage & unified scanner."""
-    f = db.query(FileRecord).filter(FileRecord.id == file_id, FileRecord.user_id == current_user.id).first()
+    f = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not f:
         raise HTTPException(status_code=404, detail="File not found.")
+    if f.user_id != current_user.id and current_user.role.upper() != "ADMIN":
+        raise HTTPException(status_code=403, detail="Access denied. You do not have permission to upload versions for this file.")
 
     raw_bytes = await file.read()
     file_size = len(raw_bytes)
@@ -542,7 +548,7 @@ async def upload_new_version(
     new_version_tag = f"v{existing_count + 1}.0"
 
     ext = os.path.splitext(f.filename)[1].lower()
-    storage_key = f"users/{current_user.id}/versions/{f.id}_{new_version_tag}_{f.filename}"
+    storage_key = f"versions/{current_user.id}/{f.id}/{new_version_tag}/{f.filename}"
     new_storage_path = save_file_bytes(storage_key, raw_bytes, content_type=f.mime_type)
 
     # Multi-Layer Rescan of new version

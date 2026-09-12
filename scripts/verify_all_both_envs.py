@@ -71,7 +71,7 @@ def test_environment(base_url, env_name):
         status, body, _ = make_request(
             f"{base_url}/api/auth/login",
             method="POST",
-            data={"email": ident, "password": pwd, "portal": "ADMIN", "admin_security_code": "994422", "mock_captcha_verified": True}
+            data={"email": ident, "password": pwd, "portal": "ADMIN"}
         )
         body_text = body.decode("utf-8", errors="replace")
         if status == 403 and "User Portal" in body_text:
@@ -85,7 +85,7 @@ def test_environment(base_url, env_name):
         status, body, _ = make_request(
             f"{base_url}/api/auth/login",
             method="POST",
-            data={"email": ident, "password": pwd, "portal": "ADMIN", "admin_security_code": "994422", "mock_captcha_verified": True}
+            data={"email": ident, "password": pwd, "portal": "ADMIN"}
         )
         if status == 200:
             res_json = json.loads(body.decode("utf-8"))

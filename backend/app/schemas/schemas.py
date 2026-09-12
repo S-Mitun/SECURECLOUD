@@ -12,16 +12,13 @@ class UserRegisterRequest(BaseModel):
     email: str = Field(..., min_length=3)
     password: str = Field(..., min_length=6)
     role: Optional[str] = "USER" # "USER", "ADMIN", or "SECURITY_ANALYST"
-    admin_security_code: Optional[str] = None
 
 class UserLoginRequest(BaseModel):
     email: str
     password: str
     portal_type: str = "USER" # "USER" or "ADMIN"
     portal: Optional[str] = None
-    mock_captcha_verified: Optional[bool] = True
     totp_code: Optional[str] = None
-    admin_security_code: Optional[str] = None
 
 class TokenResponse(BaseModel):
     access_token: str

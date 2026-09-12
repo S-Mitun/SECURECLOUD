@@ -3,14 +3,13 @@ import { adminApi } from '../../api/adminApi';
 import { fileApi } from '../../api/fileApi';
 import { useApp } from '../../context/AppContext';
 import { 
-  GitBranch, User, Files, RefreshCw, Eye, EyeOff, ShieldCheck, ShieldAlert, 
-  AlertTriangle, History, Cpu, FileText, CheckCircle2, Lock, Unlock, UploadCloud, KeyRound, Sparkles, X, Plus
+  GitBranch, User, RefreshCw, Eye, ShieldAlert, 
+  History, Cpu, FileText, UploadCloud
 } from 'lucide-react';
 import { SecurityBadge } from '../../components/SecurityBadge';
 import { FileViewerModal } from '../../components/FileViewerModal';
 import { ScanHistoryModal } from '../../components/ScanHistoryModal';
 import { SecurityDetailsModal } from '../../components/SecurityDetailsModal';
-import { AdminSecurityConfigModal } from '../../components/AdminSecurityConfigModal';
 
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return '0 B';
@@ -25,12 +24,6 @@ export function UserWiseFiles() {
   const [userGroups, setUserGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeScans, setActiveScans] = useState({});
-  const [dualAdminModal, setDualAdminModal] = useState(null);
-  const [unlockVaultModal, setUnlockVaultModal] = useState(null);
-  const [unlockedAdminIds, setUnlockedAdminIds] = useState({});
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [showUnlockPin, setShowUnlockPin] = useState(false);
-  const [showDualPin, setShowDualPin] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadStage, setUploadStage] = useState('');
   const fileInputRef = useRef(null);
@@ -84,29 +77,14 @@ export function UserWiseFiles() {
     }
   };
 
-  const handleInitiateScan = (file, userObj) => {
-    const savedPin = unlockedAdminIds[userObj ? userObj.user_id : null];
-    if (userObj && userObj.is_admin_protected && !savedPin) {
-      setDualAdminModal({ file, user: userObj, authCode: '' });
-      return;
-    }
-    handleExecuteScan(file, savedPin || '');
-  };
-
-  const handleExecuteScan = async (file, authCode = '') => {
+  const handleExecuteScan = async (file) => {
     setActiveScans(prev => ({ ...prev, [file.id]: true }));
     try {
       const scanFn = adminApi.retriggerScan || adminApi.rescanFile || adminApi.scanFile;
-      const res = await scanFn(file.id, authCode);
-      showToast(`ML Threat Scan for "${file.filename}" completed: ${res.security_status} (${res.threat_score}%)`, 'info');
-      if (res.security_status === 'MALICIOUS') {
-        triggerCriticalAlert({
-          filename: file.filename,
-          threat_score: res.threat_score
-        });
-      }
+      const res = await scanFn(file.id);
+      showToast(`Scan complete for "${file.filename}": Status is ${res.security_status || 'ANALYZED'} (${res.threat_score || 0}%)`, 'success');
       loadGroupedFiles();
-      setDualAdminModal(null);
+      window.dispatchEvent(new CustomEvent('files:updated'));
     } catch (err) {
       showToast(err.message || 'Threat scan failed.', 'error');
     } finally {
@@ -114,47 +92,30 @@ export function UserWiseFiles() {
     }
   };
 
-  const handleUnlockAdminVault = async (e) => {
-    e.preventDefault();
-    if (!unlockVaultModal || !unlockVaultModal.authCode) return;
-    try {
-      const verifyFn = adminApi.verifyAdminAccess || adminApi.unlockAdminVault;
-      const res = await verifyFn(unlockVaultModal.user.user_id, unlockVaultModal.authCode);
-      showToast(res.message || 'Access granted! Admin vault unlocked.', 'success');
-      setUnlockedAdminIds(prev => ({
-        ...prev,
-        [unlockVaultModal.user.user_id]: unlockVaultModal.authCode
-      }));
-      setUnlockVaultModal(null);
-    } catch (err) {
-      showToast(err.message || 'Invalid Admin Configuration Password.', 'error');
-    }
-  };
-
-  const totalFiles = userGroups.reduce((acc, g) => acc + (g.file_count || g.files?.length || 0), 0);
+  const totalFiles = userGroups.reduce((acc, g) => acc + (g.files ? g.files.length : 0), 0);
   const totalMalicious = userGroups.reduce((acc, g) => {
-    const mal = (g.files || []).filter(f => f.security_status === 'MALICIOUS').length;
-    return acc + mal;
+    const groupMalicious = (g.files || []).filter(f => f.security_status === 'MALICIOUS' || f.threat_score >= 70).length;
+    return acc + groupMalicious;
   }, 0);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header Banner */}
-      <div className="glass-card p-6 border border-slate-800 bg-gradient-to-r from-slate-900 via-indigo-950/30 to-slate-900 shadow-2xl">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="glass-card p-6 border border-slate-800 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-indigo-950/80 border border-indigo-500/40 text-indigo-400">
+            <div className="p-3 rounded-2xl bg-indigo-950/80 border border-indigo-500/40 text-indigo-400">
               <GitBranch className="w-8 h-8" />
             </div>
             <div>
               <h1 className="text-xl font-black text-white tracking-wide flex items-center gap-2">
-                User-Wise File Telemetry & Dual-Admin Control
+                User-Wise File Telemetry & Inspection
                 <span className="px-2 py-0.5 bg-indigo-950 border border-indigo-500/40 text-indigo-300 text-[10px] rounded font-mono">
-                  RBAC Tier-3
+                  RBAC Verified
                 </span>
               </h1>
               <p className="text-xs text-slate-400 mt-1">
-                Audited segregation of user repositories, cross-account file inspection, and Dual-Admin authorization gates.
+                Audited segregation of user repositories, cross-account file inspection, and centralized threat mitigation.
               </p>
             </div>
           </div>
@@ -177,17 +138,9 @@ export function UserWiseFiles() {
             </button>
 
             <button
-              onClick={() => setShowConfigModal(true)}
-              className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-indigo-500/40 text-indigo-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
-              title="Set or update your own Admin Configuration Password"
-            >
-              <KeyRound className="w-4 h-4 text-indigo-400" />
-              <span>Config Password</span>
-            </button>
-
-            <button
               onClick={loadGroupedFiles}
               className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl text-xs flex items-center gap-1.5 transition"
+              title="Refresh Telemetry"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -209,7 +162,7 @@ export function UserWiseFiles() {
             <div className="text-xl font-black text-rose-400 mt-0.5">{totalMalicious} Files</div>
           </div>
           <div>
-            <div className="text-[10px] text-slate-400 uppercase font-mono">Dual-Admin Vaults</div>
+            <div className="text-[10px] text-slate-400 uppercase font-mono">Admin Enclaves</div>
             <div className="text-xl font-black text-indigo-400 mt-0.5">
               {userGroups.filter(g => g.role === 'ADMIN').length} Active
             </div>
@@ -227,8 +180,6 @@ export function UserWiseFiles() {
         ) : userGroups.length > 0 ? (
           userGroups.map((group) => {
             const isAdminGroup = group.role === 'ADMIN';
-            const isProtected = group.is_admin_protected;
-            const isUnlocked = unlockedAdminIds[group.user_id];
             const files = group.files || [];
 
             return (
@@ -249,16 +200,6 @@ export function UserWiseFiles() {
                         }`}>
                           {group.role}
                         </span>
-                        {isProtected && (
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 ${
-                            isUnlocked 
-                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40'
-                              : 'bg-amber-950 text-amber-300 border border-amber-500/40'
-                          }`}>
-                            {isUnlocked ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                            <span>{isUnlocked ? 'Dual-Admin Unlocked' : 'Dual-Admin Protected'}</span>
-                          </span>
-                        )}
                       </div>
                       <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                         {group.email} • ID: {group.user_id}
@@ -267,14 +208,6 @@ export function UserWiseFiles() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {isProtected && !isUnlocked && (
-                      <button
-                        onClick={() => setUnlockVaultModal({ user: group, authCode: '' })}
-                        className="px-3 py-1.5 bg-amber-950/90 hover:bg-amber-900 border border-amber-500/50 text-amber-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition"
-                      >
-                        <KeyRound className="w-3.5 h-3.5" /> Unlock Vault
-                      </button>
-                    )}
                     {(() => {
                       const grpBytes = files.reduce((acc, f) => acc + (f.file_size || 0), 0);
                       const displayStorage = (grpBytes > 0 ? formatBytes(grpBytes) : (group.storage_used_formatted || group.used_quota_formatted || '0 B'));
@@ -294,10 +227,10 @@ export function UserWiseFiles() {
                       <tr>
                         <th>File Name</th>
                         <th>Size</th>
-                        <th>Type</th>
+                        <th>Format</th>
                         <th>Threat Score</th>
-                        <th>Verdict</th>
                         <th>Status</th>
+                        <th>State</th>
                         <th className="text-right">Actions</th>
                       </tr>
                     </thead>
@@ -342,7 +275,7 @@ export function UserWiseFiles() {
                                 <div className="flex items-center justify-end gap-1">
                                   {/* Trigger ML Threat Scan */}
                                   <button
-                                    onClick={() => handleInitiateScan(file, group)}
+                                    onClick={() => handleExecuteScan(file)}
                                     disabled={isScanning}
                                     title="Retrigger Real-Time LightGBM Inference"
                                     className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded text-xs font-bold flex items-center gap-1 transition"
@@ -353,15 +286,8 @@ export function UserWiseFiles() {
 
                                   {/* View Content */}
                                   <button
-                                    onClick={() => {
-                                      if (isProtected && !isUnlocked) {
-                                        setUnlockVaultModal({ user: group, authCode: '' });
-                                        showToast(`Dual-Admin Authorization Required: Enter "${group.username}"'s Config Password.`, 'warning');
-                                        return;
-                                      }
-                                      openModal('fileViewer', file);
-                                    }}
-                                    title="View Decrypted Payload"
+                                    onClick={() => openModal('fileViewer', file)}
+                                    title="View File Content"
                                     className="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition"
                                   >
                                     <Eye className="w-3.5 h-3.5" />
@@ -369,14 +295,7 @@ export function UserWiseFiles() {
 
                                   {/* Scan History */}
                                   <button
-                                    onClick={() => {
-                                      if (isProtected && !isUnlocked) {
-                                        setUnlockVaultModal({ user: group, authCode: '' });
-                                        showToast(`Dual-Admin Authorization Required: Enter "${group.username}"'s Config Password.`, 'warning');
-                                        return;
-                                      }
-                                      openModal('scanHistory', file);
-                                    }}
+                                    onClick={() => openModal('scanHistory', file)}
                                     title="View Scan & Threat Audit History"
                                     className="p-1 bg-slate-800 hover:bg-slate-700 text-sky-400 rounded transition"
                                   >
@@ -385,14 +304,7 @@ export function UserWiseFiles() {
 
                                   {/* Inspect ML Evidence */}
                                   <button
-                                    onClick={() => {
-                                      if (isProtected && !isUnlocked) {
-                                        setUnlockVaultModal({ user: group, authCode: '' });
-                                        showToast(`Dual-Admin Authorization Required: Enter "${group.username}"'s Config Password.`, 'warning');
-                                        return;
-                                      }
-                                      openModal('securityDetails', file);
-                                    }}
+                                    onClick={() => openModal('securityDetails', file)}
                                     title="Inspect Threat Vector & Heuristics"
                                     className="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition"
                                   >
@@ -405,8 +317,8 @@ export function UserWiseFiles() {
                         })
                       ) : (
                         <tr>
-                          <td colSpan="7" className="text-center py-6 text-slate-500 text-xs">
-                            No files uploaded in this user repository.
+                          <td colSpan="7" className="text-center py-6 text-xs text-slate-500 font-mono">
+                            NO FILES STORED IN THIS ENCLAVE
                           </td>
                         </tr>
                       )}
@@ -417,156 +329,11 @@ export function UserWiseFiles() {
             );
           })
         ) : (
-          <div className="glass-card p-12 text-center text-slate-500 text-xs">
-            No active user accounts found in the database.
+          <div className="glass-card p-12 text-center text-slate-400 font-mono text-xs">
+            NO USER ENCLAVES REGISTERED
           </div>
         )}
       </div>
-
-      {/* Unlock Vault Modal */}
-      {unlockVaultModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-          <div className="glass-card max-w-md w-full p-6 border border-amber-500/40 shadow-2xl relative space-y-4">
-            <button
-              onClick={() => setUnlockVaultModal(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-amber-950/80 border border-amber-500/40 text-amber-400">
-                <Lock className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">Dual-Admin Authorization Required</h3>
-                <p className="text-xs text-slate-400">Vault: {unlockVaultModal.user.username}</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-300 bg-slate-900/90 p-3 rounded-lg border border-slate-800 leading-relaxed">
-              This administrator has configured a secret <strong>Admin Configuration Password</strong>. Enter their config password to decrypt and inspect their files for this session.
-            </p>
-
-            <form onSubmit={handleUnlockAdminVault} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Admin Configuration Password:
-                </label>
-                <div className="relative">
-                  <input
-                    type={showUnlockPin ? "text" : "password"}
-                    value={unlockVaultModal.authCode}
-                    onChange={(e) => setUnlockVaultModal(prev => ({ ...prev, authCode: e.target.value }))}
-                    placeholder="Enter config password..."
-                    required
-                    autoFocus
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-3 pr-10 py-2 text-xs text-white font-mono focus:outline-none focus:border-amber-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowUnlockPin(!showUnlockPin)}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white"
-                    title={showUnlockPin ? "Hide password" : "Show password"}
-                  >
-                    {showUnlockPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setUnlockVaultModal(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow"
-                >
-                  <KeyRound className="w-4 h-4" /> Unlock Admin Files
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Dual Admin Modal */}
-      {dualAdminModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-          <div className="glass-card max-w-md w-full p-6 border border-indigo-500/40 shadow-2xl relative space-y-4">
-            <button
-              onClick={() => setDualAdminModal(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-indigo-950/80 border border-indigo-500/40 text-indigo-400">
-                <KeyRound className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">Dual-Admin Scan Authorization</h3>
-                <p className="text-xs text-slate-400">{dualAdminModal.file.filename}</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-300 bg-slate-900/90 p-3 rounded-lg border border-slate-800">
-              Admin <strong>"{dualAdminModal.user.username}"</strong> has protected their repository with an Admin Config PIN. Enter the PIN to authorize scanning.
-            </p>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Enter Admin Security PIN:
-                </label>
-                <div className="relative">
-                  <input
-                    type={showDualPin ? "text" : "password"}
-                    value={dualAdminModal.authCode}
-                    onChange={(e) => setDualAdminModal(prev => ({ ...prev, authCode: e.target.value }))}
-                    placeholder="Enter PIN / Password..."
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-3 pr-10 py-2 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowDualPin(!showDualPin)}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white"
-                    title={showDualPin ? "Hide password" : "Show password"}
-                  >
-                    {showDualPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setDualAdminModal(null)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleExecuteScan(dualAdminModal.file, dualAdminModal.authCode)}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5"
-                >
-                  <Cpu className="w-4 h-4" /> Authorize & Scan
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Admin Config Password Modal */}
-      {showConfigModal && (
-        <AdminSecurityConfigModal onClose={() => { setShowConfigModal(false); loadGroupedFiles(); }} />
-      )}
 
       <FileViewerModal onUpdate={loadGroupedFiles} />
       <ScanHistoryModal onUpdate={loadGroupedFiles} />

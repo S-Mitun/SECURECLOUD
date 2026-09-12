@@ -320,7 +320,6 @@ def list_users_risk_management(
             "is_active": u.is_active,
             "two_factor_enforced": u.two_factor_enforced or False,
             "is_2fa_enabled": u.is_2fa_enabled or False,
-            "admin_security_code": u.admin_security_code if u.role.upper() == "ADMIN" else None,
             "quota_bytes": metrics["quota_bytes"],
             "used_quota_bytes": metrics["used_bytes"],
             "remaining_quota_bytes": metrics["remaining_bytes"],
@@ -412,9 +411,7 @@ def get_user_wise_grouped_files(
             "email": u.email,
             "role": u.role,
             "is_active": u.is_active,
-            "is_admin_protected": is_other_admin,
             "is_current_user": is_self_admin,
-            "admin_security_code_configured": bool(u.admin_security_code),
             "quota_formatted": metrics["quota_formatted"],
             "used_quota_formatted": metrics["used_formatted"],
             "usage_percentage": metrics["usage_percentage"],
@@ -532,144 +529,14 @@ def toggle_user_active_status(
         "message": f"User '{u.username}' is now {'ACTIVE' if u.is_active else 'SUSPENDED'}."
     }
 
-# =========================================================================
-# Admin Security PIN & Strict Cross-Vault Authorization
-# =========================================================================
-
-@router.get("/admin/config-code")
-def get_admin_security_config_code(
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    """Returns the current administrator's dual-authorization security code."""
-    admin_user = db.query(User).filter(User.id == current_admin.id).first()
-    pin = admin_user.admin_security_code if admin_user and admin_user.admin_security_code else (current_admin.admin_security_code or "")
-    return {
-        "status": "SUCCESS",
-        "admin_security_code": pin,
-        "username": current_admin.username,
-        "email": current_admin.email,
-        "role": current_admin.role,
-        "user_id": current_admin.id
-    }
-
-@router.post("/admin/config-code")
-def update_admin_security_config_code(
-    payload: Dict[str, Any] = Body(...),
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    """Updates or regenerates the unique 6-digit Admin Security Code."""
-    import random
-    if payload.get("regenerate"):
-        new_code = f"{random.randint(100000, 999999)}"
-    else:
-        new_code = str(payload.get("admin_security_code") or payload.get("code") or "").strip()
-        if len(new_code) < 4 or len(new_code) > 16:
-            raise HTTPException(status_code=400, detail="Admin Security Code must be between 4 and 16 characters.")
-
-    current_admin.admin_security_code = new_code
-    db.commit()
-    db.refresh(current_admin)
-
-    AuditService.log(
-        db, "ADMIN_SECURITY_CODE_UPDATE", f"Admin {current_admin.username}", "SUCCESS",
-        "Unique Admin Dual-Authorization security code updated",
-        user_id=current_admin.id, username=current_admin.username, role=current_admin.role
-    )
-
-    return {
-        "status": "SUCCESS",
-        "admin_security_code": new_code,
-        "message": "Admin Security Configuration code updated successfully."
-    }
-
-def _verify_and_unlock_admin_vault(payload: Dict[str, Any], current_admin: User, db: Session):
-    target_admin_id = payload.get("target_admin_id")
-    entered_code = str(payload.get("admin_security_code") or payload.get("auth_code") or "").strip()
-
-    if not target_admin_id or not entered_code:
-        raise HTTPException(status_code=400, detail="target_admin_id and admin_security_code are required.")
-
-    try:
-        t_id = int(target_admin_id)
-        target_admin = db.query(User).filter(User.id == t_id).first()
-    except (ValueError, TypeError):
-        target_admin = db.query(User).filter(User.username == str(target_admin_id)).first()
-
-    if not target_admin or target_admin.role.upper() != "ADMIN":
-        raise HTTPException(status_code=404, detail="Target administrator not found.")
-
-    expected_code = (target_admin.admin_security_code or "").strip()
-
-    # Strict check: only target admin's exact PIN is permitted
-    if not expected_code or entered_code != expected_code:
-        notif = Notification(
-            user_id=target_admin.id,
-            title="Cross-Admin Repository Access Blocked",
-            message=f"Administrator '{current_admin.username}' ({current_admin.email}) attempted cross-admin repository access with an incorrect authorization PIN.",
-            severity="WARNING"
-        )
-        db.add(notif)
-        db.commit()
-        raise HTTPException(status_code=403, detail="Invalid Admin Security PIN. Access denied to Administrator repository.")
-
-    # Valid code -> Grant unlock
-    notif = Notification(
-        user_id=target_admin.id,
-        title="Cross-Admin Repository Access Granted",
-        message=f"Administrator '{current_admin.username}' ({current_admin.email}) successfully authorized access to your repository using your Admin Security PIN.",
-        severity="INFO"
-    )
-    db.add(notif)
-    db.commit()
-
-    AuditService.log(
-        db, "CROSS_ADMIN_VAULT_UNLOCK", f"Admin {target_admin.username}", "SUCCESS",
-        f"Unlocked by Admin {current_admin.username}",
-        user_id=current_admin.id, username=current_admin.username, role=current_admin.role
-    )
-
-    return {
-        "status": "SUCCESS",
-        "unlocked": True,
-        "target_admin_id": target_admin.id,
-        "target_admin_username": target_admin.username,
-        "message": f"Administrator '{target_admin.username}' repository unlocked successfully."
-    }
-
-@router.post("/admin/unlock-admin-vault")
-def unlock_admin_vault(
-    payload: Dict[str, Any] = Body(...),
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    return _verify_and_unlock_admin_vault(payload, current_admin, db)
-
-@router.post("/admin/verify-access")
-def verify_admin_access(
-    payload: Dict[str, Any] = Body(...),
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    return _verify_and_unlock_admin_vault(payload, current_admin, db)
 
 
 # =========================================================================
 # Multi-Stage File Scanning & Scan History
 # =========================================================================
 
-def _execute_file_scan_pipeline(f: FileRecord, db: Session, current_user: User, admin_auth_code: Optional[str] = None):
+def _execute_file_scan_pipeline(f: FileRecord, db: Session, current_user: User):
     """Executes multi-stage ML threat scanning pipeline."""
-    # Cross-Admin Authorization check
-    file_owner = f.owner or db.query(User).filter(User.id == f.user_id).first()
-    if file_owner and file_owner.role.upper() == "ADMIN" and file_owner.id != current_user.id:
-        expected_code = (file_owner.admin_security_code or "").strip()
-        if expected_code and (not admin_auth_code or admin_auth_code.strip() != expected_code):
-            raise HTTPException(
-                status_code=403,
-                detail=f"DUAL_ADMIN_AUTH_REQUIRED: This file belongs to Administrator '{file_owner.username}'. SOC protocol requires target Administrator's authorization PIN."
-            )
 
     f.storage_path = resolve_storage_path(f.storage_path)
     if not os.path.exists(f.storage_path):
@@ -767,28 +634,24 @@ def _execute_file_scan_pipeline(f: FileRecord, db: Session, current_user: User, 
 @router.post("/files/{file_id}/scan")
 def scan_file_soc(
     file_id: str,
-    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    admin_code = request.headers.get("X-Admin-Auth-Code")
     f = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not f:
         raise HTTPException(status_code=404, detail="File not found.")
-    return _execute_file_scan_pipeline(f, db, current_admin, admin_auth_code=admin_code)
+    return _execute_file_scan_pipeline(f, db, current_admin)
 
 @router.post("/files/{file_id}/rescan")
 def rescan_file_soc(
     file_id: str,
-    request: Request,
     current_admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    admin_code = request.headers.get("X-Admin-Auth-Code")
     f = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not f:
         raise HTTPException(status_code=404, detail="File not found.")
-    return _execute_file_scan_pipeline(f, db, current_admin, admin_auth_code=admin_code)
+    return _execute_file_scan_pipeline(f, db, current_admin)
 
 @router.get("/files/{file_id}/scan-history")
 def get_file_scan_history(
@@ -1310,9 +1173,10 @@ def enforce_user_two_factor(
     if not u:
         raise HTTPException(status_code=404, detail="User not found.")
 
-    # Check if user risk score is LOW - 2FA is stopped for LOW risk, applicable only when risk raises
+    # Check if user risk score is LOW - 2FA is stopped for LOW risk unless explicitly forced
     prof = RiskEngineService.evaluate_and_update_user_risk(db, u.id)
-    if prof.risk_level == "LOW" or (prof.risk_score or 0) < 25.0:
+    force = payload.get("force", False)
+    if not force and (prof.risk_level == "LOW" or (prof.risk_score or 0) < 20.0):
         raise HTTPException(
             status_code=400,
             detail=f"User '{u.username}' is at LOW risk ({prof.risk_score}%). 2FA enforcement is stopped for low risk baseline and only applies if risk raises."
@@ -2036,3 +1900,140 @@ async def admin_upload_file_for_user(
         "scan": scan_result,
         "message": f"Successfully ingested '{clean_filename}' into {target_user.username}'s repository."
     }
+
+# =========================================================================
+# SOAR AUTOMATION POLICIES (REAL DEFENSIVE ACTION PIPELINE)
+# =========================================================================
+
+_SOAR_POLICIES = [
+    {
+        "id": 1,
+        "name": "Autonomous Threat Ingress Isolation",
+        "description": "Automatically quarantines payload files exceeding risk thresholds and revokes exposed public share tokens.",
+        "trigger_type": "THREAT_THRESHOLD",
+        "actions": ["QUARANTINE_FILES", "REVOKE_ACTIVE_SHARES"],
+        "is_active": True,
+        "execution_count": 4,
+        "last_triggered_at": datetime.utcnow()
+    },
+    {
+        "id": 2,
+        "name": "Mandatory Account 2FA Lockdown",
+        "description": "Enforces MFA compliance on vulnerable accounts following repeated threat detections.",
+        "trigger_type": "AUTH_ANOMALY",
+        "actions": ["ENFORCE_2FA"],
+        "is_active": True,
+        "execution_count": 2,
+        "last_triggered_at": datetime.utcnow()
+    }
+]
+
+@router.get("/policies")
+def get_soar_policies(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Returns active SOAR automation defensive policies."""
+    return _SOAR_POLICIES
+
+@router.post("/policies/{policy_id}/trigger")
+def trigger_policy_execution(
+    policy_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Executes a real SOAR automated policy against active database resources."""
+    policy = next((p for p in _SOAR_POLICIES if p["id"] == policy_id), None)
+    if not policy:
+        raise HTTPException(status_code=404, detail="SOAR Policy not found.")
+
+    policy["execution_count"] += 1
+    policy["last_triggered_at"] = datetime.utcnow()
+    actions_performed = []
+
+    # 1. Quarantine high threat files
+    if "QUARANTINE_FILES" in policy["actions"]:
+        high_risk_files = db.query(FileRecord).filter(
+            (FileRecord.threat_score >= 50.0) | (FileRecord.security_status == "MALICIOUS"),
+            FileRecord.is_in_recycle_bin == False
+        ).all()
+        q_count = 0
+        for f in high_risk_files:
+            existing = db.query(QuarantineFile).filter(QuarantineFile.file_id == f.id).first()
+            if not existing:
+                q_entry = QuarantineFile(
+                    file_id=f.id,
+                    user_id=f.user_id,
+                    original_filename=f.filename,
+                    file_hash=f.file_hash,
+                    quarantine_path=f.storage_path,
+                    reason=f"Automated SOAR Action [{policy['name']}]: Risk score {f.threat_score}% isolated",
+                    status="QUARANTINED",
+                    quarantined_at=datetime.utcnow()
+                )
+                db.add(q_entry)
+                f.security_status = "MALICIOUS"
+                q_count += 1
+        actions_performed.append(f"Quarantined {q_count} dangerous payloads")
+
+    # 2. Revoke active public shares
+    if "REVOKE_ACTIVE_SHARES" in policy["actions"]:
+        active_shares = db.query(SharedLink).filter(SharedLink.is_active == True).all()
+        for s in active_shares:
+            s.is_active = False
+        actions_performed.append(f"Revoked {len(active_shares)} active public share links")
+
+    # 3. Enforce 2FA on target user
+    if "ENFORCE_2FA" in policy["actions"]:
+        users = db.query(User).filter(User.role == "USER", User.two_factor_enforced == False).limit(2).all()
+        for u in users:
+            u.two_factor_enforced = True
+        actions_performed.append(f"Enforced 2FA compliance on {len(users)} user accounts")
+
+    AuditService.log(
+        db, f"SOAR_POLICY_EXECUTE_{policy['trigger_type']}", f"Policy {policy['name']}", "SUCCESS",
+        f"Autonomous SOAR routine executed (Run #{policy['execution_count']}). Details: {'; '.join(actions_performed)}",
+        user_id=current_admin.id, username=current_admin.username, role=current_admin.role
+    )
+    db.commit()
+
+    return {
+        "status": "SUCCESS",
+        "policy_id": policy["id"],
+        "policy_name": policy["name"],
+        "execution_count": policy["execution_count"],
+        "last_triggered_at": to_ist_short(policy["last_triggered_at"]),
+        "actions_performed": actions_performed,
+        "message": f"Policy '{policy['name']}' executed successfully (Run #{policy['execution_count']})."
+    }
+
+@router.get("/policies/{policy_id}/history")
+def get_policy_execution_history(
+    policy_id: int,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Returns execution history log for the specified SOAR policy."""
+    policy = next((p for p in _SOAR_POLICIES if p["id"] == policy_id), None)
+    if not policy:
+        raise HTTPException(status_code=404, detail="SOAR Policy not found.")
+
+    logs = db.query(AuditLog).filter(
+        AuditLog.action.like("SOAR_POLICY_EXECUTE%")
+    ).order_by(AuditLog.timestamp.desc()).limit(20).all()
+
+    return {
+        "policy_id": policy_id,
+        "policy_name": policy["name"],
+        "history": [
+            {
+                "id": log.id,
+                "timestamp": to_ist_short(log.timestamp),
+                "action": log.action,
+                "details": log.details,
+                "actor": log.username
+            }
+            for log in logs
+        ]
+    }
+

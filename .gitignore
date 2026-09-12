@@ -24,6 +24,9 @@ yarn-error.log*
 storage/temp/
 storage/cache/
 storage/uploads/
+storage/quarantine/
+storage/versions/
+storage/confidential/
 *.db
 *.sqlite3
 

@@ -108,37 +108,52 @@ def health_check():
     Database, Storage, ML Engine, and Malware Scanner without exposing secrets.
     """
     # 1. Database check
-    db_status = "connected"
+    db_status = "AVAILABLE"
     try:
         from sqlalchemy import text
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
     except Exception as e:
-        db_status = f"degraded ({type(e).__name__})"
+        db_status = f"DEGRADED ({type(e).__name__})"
 
     # 2. Storage check
     from backend.app.services.storage_service import get_active_storage_info
     storage_info = get_active_storage_info()
-    storage_status = "s3-connected" if storage_info["provider"] == "s3" else "local-storage"
+    if storage_info.get("provider") == "s3" and storage_info.get("is_healthy"):
+        storage_status = "S3 AVAILABLE"
+    elif storage_info.get("provider") == "s3":
+        storage_status = "S3 DEGRADED"
+    else:
+        storage_status = "LOCAL FALLBACK"
 
     # 3. ML status check
-    ml_status = "ready"
+    ml_status = "AVAILABLE"
     from backend.app.config import ML_DIR
     model_path = ML_DIR / "models" / "active_model.joblib"
     if not model_path.exists():
-        ml_status = "model-unavailable"
+        ml_status = "UNAVAILABLE"
 
-    # 4. Malware scanner check
+    # 4. Malware scanner check (ClamAV daemon)
     from scanner.scanner_service import unified_scanner
     clam_avail = unified_scanner.clamav.is_available()
-    scanner_status = "clamav-active" if clam_avail else "Signature scanner unavailable; static/ML analysis continued."
+    scanner_status = "AVAILABLE" if clam_avail else "UNAVAILABLE"
+    scanner_message = "Signature scanner active." if clam_avail else "Signature scanner unavailable; static/ML analysis continued."
+
+    overall_health = "HEALTHY" if (db_status == "AVAILABLE" and clam_avail and ml_status == "AVAILABLE") else "DEGRADED"
 
     return {
         "status": "ok",
+        "health": overall_health,
         "database": db_status,
         "storage": storage_status,
         "ml": ml_status,
-        "scanner": scanner_status
+        "scanner": scanner_message,
+        "scanner_status": scanner_status,
+        "storage_details": {
+            "mode": storage_info.get("provider", "local"),
+            "is_persistent_cloud": storage_status == "S3 AVAILABLE",
+            "detail": storage_info.get("detail", "")
+        }
     }
 
 @app.get("/{full_path:path}")

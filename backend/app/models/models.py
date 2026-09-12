@@ -29,7 +29,6 @@ class User(Base):
     reset_token = Column(String(64), nullable=True)
     reset_token_expiry = Column(DateTime, nullable=True)
     quota_bytes = Column(BigInteger, default=10 * 1024 * 1024 * 1024) # 10 GB
-    admin_security_code = Column(String(32), nullable=True, default=None) # Unique Admin Security Config PIN
     is_locked_down = Column(Boolean, default=False)
     used_quota_bytes = Column(BigInteger, default=0)
     risk_score = Column(Float, default=0.0) # 0.0 to 100.0
@@ -41,6 +40,9 @@ class User(Base):
     sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
     shared_links = relationship("SharedLink", back_populates="user", cascade="all, delete-orphan")
     risk_profile = relationship("UserRiskProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+# Supabase Profile Alignment: Profile is an alias for the primary User model
+Profile = User
 
 class UserSession(Base):
     __tablename__ = "user_sessions"

@@ -59,7 +59,6 @@ def register_user(
     default_quota = 10 * 1024 * 1024 * 1024
     is_admin = bool(req.role and req.role.upper() in ["ADMIN", "SECURITY_ANALYST"])
     assigned_role = req.role.upper() if is_admin else "USER"
-    admin_pin = req.admin_security_code.strip() if (req.admin_security_code and req.admin_security_code.strip()) else None
 
     new_user = User(
         username=req.username.strip(),
@@ -71,7 +70,6 @@ def register_user(
         is_active=True,
         is_2fa_enabled=False,
         two_factor_enforced=False,
-        admin_security_code=admin_pin,
         last_login_ip=client_ip,
         created_at=datetime.utcnow()
     )

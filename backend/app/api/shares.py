@@ -41,12 +41,14 @@ router = APIRouter(prefix="/api/shares", tags=["Shared Links"])
 def _process_create_share(file_id: str, req: CreateSharedLinkRequest, current_user: User, db: Session):
     f = db.query(FileRecord).filter(
         FileRecord.id == file_id,
-        FileRecord.user_id == current_user.id,
         FileRecord.is_in_recycle_bin == False
     ).first()
 
     if not f:
         raise HTTPException(status_code=404, detail="File not found or cannot be shared.")
+
+    if f.user_id != current_user.id and current_user.role.upper() != "ADMIN":
+        raise HTTPException(status_code=403, detail="Access denied. You do not have permission to share files belonging to another user.")
 
     if f.is_confidential:
         raise HTTPException(status_code=400, detail="Confidential vault files cannot be publicly shared.")
@@ -116,6 +118,7 @@ def create_shared_link(
     return _process_create_share(req.file_id, req, current_user, db)
 
 @router.post("/{file_id}/create", response_model=SharedLinkResponse)
+@router.post("/create/{file_id}", response_model=SharedLinkResponse)
 def create_shared_link_by_path(
     file_id: str,
     req: CreateSharedLinkRequest = Body(...),

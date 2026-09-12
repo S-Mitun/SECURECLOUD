@@ -76,5 +76,43 @@ class SupabaseService:
             with urllib.request.urlopen(req, timeout=5) as response:
                 data = json.loads(response.read().decode("utf-8"))
                 return {"status": "SUCCESS", "synced": True, "session": data}
+    @staticmethod
+    def recover_password(email: str) -> Dict[str, Any]:
+        """Initiates Supabase Auth password reset email."""
+        if not SupabaseService.is_configured():
+            return {"status": "LOCAL_MODE", "synced": False}
+
+        url = f"{SUPABASE_URL.rstrip('/')}/auth/v1/recover"
+        headers = {
+            "apikey": SUPABASE_KEY or SUPABASE_SERVICE_KEY,
+            "Content-Type": "application/json"
+        }
+        payload = {"email": email}
+
+        try:
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
+            with urllib.request.urlopen(req, timeout=5) as response:
+                return {"status": "SUCCESS", "synced": True}
         except Exception as e:
-            return {"status": "AUTH_FAILED", "synced": False, "error": str(e)}
+            return {"status": "ERROR", "synced": False, "error": str(e)}
+
+    @staticmethod
+    def get_user_from_token(token: str) -> Optional[Dict[str, Any]]:
+        """Validates token and fetches verified profile from Supabase Auth."""
+        if not SupabaseService.is_configured():
+            return None
+
+        url = f"{SUPABASE_URL.rstrip('/')}/auth/v1/user"
+        headers = {
+            "apikey": SUPABASE_KEY or SUPABASE_SERVICE_KEY,
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            req = urllib.request.Request(url, headers=headers, method="GET")
+            with urllib.request.urlopen(req, timeout=4) as response:
+                if response.status == 200:
+                    return json.loads(response.read().decode("utf-8"))
+        except Exception:
+            return None
+        return None

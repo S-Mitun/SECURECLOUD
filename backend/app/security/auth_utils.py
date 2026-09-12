@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.config import (
     JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES,
-    SUPABASE_JWT_SECRET
+    SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_KEY, SUPABASE_JWT_SECRET
 )
 from backend.app.database import get_db
 from backend.app.models.models import User, UserSession
@@ -47,9 +47,10 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
 
 def decode_token(token: str) -> Dict[str, Any]:
     """
-    Decodes and validates JWT token with support for both:
-    1. Standard SecureCloud HMAC JWT tokens
-    2. Supabase Auth JWT tokens (when SUPABASE_JWT_SECRET is configured)
+    Decodes and validates JWT token with support for:
+    1. Supabase Auth JWT tokens (verified via SUPABASE_JWT_SECRET HS256)
+    2. Supabase Auth API verification (when SUPABASE_URL & API key are set)
+    3. Standard SecureCloud HMAC JWT tokens (local fallback)
     """
     # 1. Attempt Supabase JWT decoding if secret is present
     if SUPABASE_JWT_SECRET:
@@ -63,7 +64,33 @@ def decode_token(token: str) -> Dict[str, Any]:
         except jwt.InvalidTokenError:
             pass
 
-    # 2. Fall back to standard application JWT secret
+    # 2. Attempt verification with Supabase Auth API if Supabase URL & Key configured
+    if SUPABASE_URL and (SUPABASE_KEY or SUPABASE_SERVICE_KEY):
+        try:
+            import urllib.request
+            import json
+            req = urllib.request.Request(
+                f"{SUPABASE_URL.rstrip('/')}/auth/v1/user",
+                headers={
+                    "apikey": SUPABASE_KEY or SUPABASE_SERVICE_KEY,
+                    "Authorization": f"Bearer {token}"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                if resp.status == 200:
+                    supa_user = json.loads(resp.read().decode("utf-8"))
+                    return {
+                        "sub": supa_user.get("id"),
+                        "email": supa_user.get("email"),
+                        "user_metadata": supa_user.get("user_metadata", {}),
+                        "app_metadata": supa_user.get("app_metadata", {}),
+                        "aud": supa_user.get("aud", "authenticated"),
+                        "role": supa_user.get("app_metadata", {}).get("role") or supa_user.get("user_metadata", {}).get("role", "USER")
+                    }
+        except Exception:
+            pass
+
+    # 3. Fall back to standard application JWT secret
     try:
         return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:

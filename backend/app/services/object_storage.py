@@ -153,6 +153,18 @@ class LocalStorageProvider(BaseStorageProvider):
         if norm.startswith("s3://"):
             norm = "/".join(norm.split("/")[3:]) # Strip s3://bucket/
         
+        # Check prefix-based destination under STORAGE_DIR
+        if norm.startswith("uploads/"):
+            return UPLOADS_DIR / norm[len("uploads/"):]
+        if norm.startswith("quarantine/"):
+            return QUARANTINE_DIR / norm[len("quarantine/"):]
+        if norm.startswith("confidential/"):
+            return CONFIDENTIAL_DIR / norm[len("confidential/"):]
+        if norm.startswith("recycle_bin/"):
+            return RECYCLE_BIN_DIR / norm[len("recycle_bin/"):]
+        if norm.startswith("versions/"):
+            return STORAGE_DIR / norm
+
         # Check subdirectories
         for base in [UPLOADS_DIR, QUARANTINE_DIR, CONFIDENTIAL_DIR, RECYCLE_BIN_DIR, STORAGE_DIR]:
             cand = base / norm

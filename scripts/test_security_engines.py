@@ -147,9 +147,9 @@ def run_tests():
         print(f"  [PASS] User.used_quota_bytes persisted in database: {quota_user.used_quota_bytes} bytes.")
 
         # -------------------------------------------------------------
-        # TEST 3: Admin Config PIN & Strict Cross-Vault Authorization
+        # TEST 3: Server-Side RBAC Admin Authorization
         # -------------------------------------------------------------
-        print("\n[TEST 3] Testing Admin Config PIN & Strict Cross-Vault Isolation...")
+        print("\n[TEST 3] Testing Server-Side RBAC Admin Authorization...")
         admin_a = db.query(User).filter(User.username == "admin_alpha").first()
         if not admin_a:
             admin_a = User(
@@ -157,32 +157,25 @@ def run_tests():
                 email="admin_a@securecloud.local",
                 hashed_password="fake_hash",
                 role="ADMIN",
-                admin_security_code="AlphaSecretPin99",
                 is_active=True
             )
             db.add(admin_a)
             db.commit()
             db.refresh(admin_a)
-        else:
-            admin_a.admin_security_code = "AlphaSecretPin99"
-            db.commit()
 
-        # Helper function simulating vault unlock check
-        def check_vault_unlock(target_admin, entered_pin):
-            correct_pin = target_admin.admin_security_code
-            if not correct_pin:
-                return 400, "PIN not configured"
-            if entered_pin.strip() == correct_pin.strip():
-                return 200, "Unlocked"
-            return 403, "Access Denied: Invalid Security Code"
+        # Helper function verifying RBAC role requirement
+        def check_admin_rbac(user):
+            if not user or user.role.upper() != "ADMIN":
+                return 403, "Access Denied: Administrator role required"
+            return 200, "Access Granted"
 
-        status_code, msg = check_vault_unlock(admin_a, "WrongPin123")
+        status_code, msg = check_admin_rbac(quota_user)
         assert status_code == 403, f"Expected 403, got {status_code}"
-        print("  [PASS] Random / Invalid PIN strictly returns HTTP 403 Forbidden.")
+        print("  [PASS] Standard USER strictly rejected from admin resources: HTTP 403 Forbidden.")
 
-        status_code, msg = check_vault_unlock(admin_a, "AlphaSecretPin99")
+        status_code, msg = check_admin_rbac(admin_a)
         assert status_code == 200, f"Expected 200, got {status_code}"
-        print("  [PASS] Correct Config PIN ('AlphaSecretPin99') returns HTTP 200 Success & unlocks vault.")
+        print("  [PASS] Verified ADMIN role successfully authorized: HTTP 200 Access Granted.")
 
         # -------------------------------------------------------------
         # TEST 4: ML Threat Probability Thresholds

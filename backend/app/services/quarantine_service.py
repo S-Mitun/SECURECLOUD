@@ -31,11 +31,12 @@ class QuarantineService:
         quarantine_dest = os.path.join(QUARANTINE_DIR, quarantine_filename)
 
         from backend.app.services.storage_service import save_file_bytes
+        quarantine_key = f"quarantine/{user_id}/{file_id}/{quarantine_filename}"
         if raw_bytes is not None:
-            quarantine_dest = save_file_bytes(f"quarantine/{quarantine_filename}", raw_bytes)
+            quarantine_dest = save_file_bytes(quarantine_key, raw_bytes)
         elif file_path and os.path.exists(file_path):
             with open(file_path, "rb") as fp:
-                quarantine_dest = save_file_bytes(f"quarantine/{quarantine_filename}", fp.read())
+                quarantine_dest = save_file_bytes(quarantine_key, fp.read())
             try:
                 os.remove(file_path)
             except Exception:
