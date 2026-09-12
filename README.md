@@ -2,6 +2,9 @@
 
 > **"A security-first cloud storage platform that stores files in the cloud, actively analyzes uploaded files using real malware scanning + lightweight ML/static analysis, explains security risks, records security events, and provides application-level incident response through a SOC dashboard."**
 
+> 🚀 **Live Production Deployment**: [https://securecloud-app-production.up.railway.app](https://securecloud-app-production.up.railway.app)  
+> 🩺 **System Health & Telemetry Status**: [https://securecloud-app-production.up.railway.app/health](https://securecloud-app-production.up.railway.app/health)
+
 ---
 
 [![System Status](https://img.shields.io/badge/System%20Status-Healthy%20%7C%20Online-10B981?style=for-the-badge)](https://securecloud-app-production.up.railway.app/health)
@@ -253,6 +256,8 @@ SecureCloud is containerized with a production multi-stage `Dockerfile`:
 - **Stage 2 (python:3.11-slim)**: Copies backend, ML models, scanner service, and compiled assets, running `python backend/run.py`.
 
 ### Railway Configuration:
+- **Production URL**: [https://securecloud-app-production.up.railway.app](https://securecloud-app-production.up.railway.app)
+- **Live Health Endpoint**: [https://securecloud-app-production.up.railway.app/health](https://securecloud-app-production.up.railway.app/health)
 - **Build**: Uses `Dockerfile`.
 - **Start Command**: `python backend/run.py`
 - **Health Check Path**: `/health` (Timeout: 30s)
