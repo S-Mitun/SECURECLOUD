@@ -95,6 +95,7 @@ class CreateSharedLinkRequest(BaseModel):
 
 class SharedLinkResponse(BaseModel):
     id: str
+    token: Optional[str] = None
     file_id: str
     filename: str
     file_size: int

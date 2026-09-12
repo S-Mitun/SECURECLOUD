@@ -25,9 +25,9 @@ export function AdminSecurityConfigModal({ isOpen = true, onClose }) {
     setLoading(true);
     try {
       const data = await adminApi.getAdminSecurityCode();
-      setCurrentCode(data.admin_security_code || currentAdmin?.admin_security_code || '994422');
+      setCurrentCode(data.admin_security_code || currentAdmin?.admin_security_code || '');
     } catch (err) {
-      setCurrentCode(currentAdmin?.admin_security_code || '994422');
+      setCurrentCode(currentAdmin?.admin_security_code || '');
     } finally {
       setLoading(false);
     }

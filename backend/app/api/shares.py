@@ -86,6 +86,7 @@ def _process_create_share(file_id: str, req: CreateSharedLinkRequest, current_us
 
     return {
         "id": share.id,
+        "token": share.id,
         "file_id": f.id,
         "filename": f.filename,
         "file_size": f.file_size,
@@ -102,6 +103,8 @@ def _process_create_share(file_id: str, req: CreateSharedLinkRequest, current_us
         "created_at": to_ist_short(share.created_at)
     }
 
+@router.post("", response_model=SharedLinkResponse)
+@router.post("/", response_model=SharedLinkResponse)
 @router.post("/create", response_model=SharedLinkResponse)
 def create_shared_link(
     req: CreateSharedLinkRequest,
@@ -208,6 +211,7 @@ def global_revoke_all_shares(
     AuditService.log(db, "GLOBAL_REVOKE_SHARES", "All Shares", "SUCCESS", "All public links terminated globally", user_id=current_admin.id, username=current_admin.username, role="ADMIN")
     return {"message": f"Successfully revoked {len(active_shares)} active shared link(s)."}
 
+@router.get("/{share_id}")
 @router.get("/public/{share_id}")
 def get_public_share_info(
     share_id: str,

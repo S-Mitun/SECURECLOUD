@@ -102,5 +102,28 @@ export const fileApi = {
 
   getPublicShareInfo: async (shareId) => {
     return await apiClient(`/api/shares/public/${shareId}`);
+  },
+
+  // File Versioning
+  listVersions: async (fileId) => {
+    return await apiClient(`/api/files/${fileId}/versions`);
+  },
+
+  uploadVersion: async (fileId, fileOrFormData) => {
+    let body = fileOrFormData;
+    if (fileOrFormData instanceof File || fileOrFormData instanceof Blob) {
+      body = new FormData();
+      body.append('file', fileOrFormData);
+    }
+    return await apiClient(`/api/files/${fileId}/versions`, {
+      method: 'POST',
+      body
+    });
+  },
+
+  restoreVersion: async (fileId, versionId) => {
+    return await apiClient(`/api/files/${fileId}/versions/${versionId}/restore`, {
+      method: 'POST'
+    });
   }
 };

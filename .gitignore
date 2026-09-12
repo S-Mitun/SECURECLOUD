@@ -23,6 +23,9 @@ yarn-error.log*
 # Database & Storage
 storage/temp/
 storage/cache/
+storage/uploads/
+*.db
+*.sqlite3
 
 # Environment variables & secrets
 .env

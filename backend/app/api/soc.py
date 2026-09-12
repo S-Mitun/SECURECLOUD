@@ -194,6 +194,8 @@ def get_soc_dashboard(
         "sentinel_state": sentinel_phase_state
     }
 
+@router.get("/sentinel/status")
+@router.get("/sentinel")
 @router.get("/telemetry")
 def get_soc_telemetry(
     current_admin: User = Depends(get_current_admin)
@@ -205,6 +207,8 @@ def get_soc_telemetry(
     if sentinel_phase_state["ram_override"] is not None:
         telemetry["ram_percent"] = sentinel_phase_state["ram_override"]
     return {
+        "status": sentinel_phase_state.get("status", "HEALTHY"),
+        "phase": sentinel_phase_state.get("phase", "Phase 1: Normal (32%)"),
         "telemetry": telemetry,
         "sentinel_phase": sentinel_phase_state,
         "sentinel": sentinel_phase_state,
@@ -534,15 +538,19 @@ def toggle_user_active_status(
 
 @router.get("/admin/config-code")
 def get_admin_security_config_code(
-    current_admin: User = Depends(get_current_admin)
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
 ):
     """Returns the current administrator's dual-authorization security code."""
+    admin_user = db.query(User).filter(User.id == current_admin.id).first()
+    pin = admin_user.admin_security_code if admin_user and admin_user.admin_security_code else (current_admin.admin_security_code or "")
     return {
         "status": "SUCCESS",
-        "admin_security_code": current_admin.admin_security_code or "",
+        "admin_security_code": pin,
         "username": current_admin.username,
         "email": current_admin.email,
-        "role": current_admin.role
+        "role": current_admin.role,
+        "user_id": current_admin.id
     }
 
 @router.post("/admin/config-code")
@@ -646,43 +654,6 @@ def verify_admin_access(
 ):
     return _verify_and_unlock_admin_vault(payload, current_admin, db)
 
-@router.get("/admin/config-code")
-def get_current_admin_security_code(
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    """Returns the logged-in administrator's personal, fixed Dual-Auth Key PIN."""
-    # Ensure fresh DB record
-    admin_user = db.query(User).filter(User.id == current_admin.id).first()
-    pin = admin_user.admin_security_code if admin_user and admin_user.admin_security_code else (current_admin.admin_security_code or "")
-    return {
-        "status": "SUCCESS",
-        "admin_security_code": pin,
-        "username": current_admin.username,
-        "user_id": current_admin.id
-    }
-
-@router.post("/admin/config-code")
-def set_current_admin_security_code(
-    payload: Dict[str, Any] = Body(...),
-    current_admin: User = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    """Updates the administrator's personal Dual-Auth Key PIN if not already fixed."""
-    new_code = str(payload.get("admin_security_code") or payload.get("code") or "").strip()
-    if not new_code:
-        raise HTTPException(status_code=400, detail="admin_security_code cannot be empty.")
-    
-    admin_user = db.query(User).filter(User.id == current_admin.id).first()
-    if admin_user:
-        admin_user.admin_security_code = new_code
-        db.commit()
-    
-    return {
-        "status": "SUCCESS",
-        "admin_security_code": new_code,
-        "message": "Admin Dual-Auth Key updated successfully."
-    }
 
 # =========================================================================
 # Multi-Stage File Scanning & Scan History
@@ -1649,6 +1620,7 @@ def quarantine_action(
     else:
         raise HTTPException(status_code=400, detail="Invalid action. Use 'TRUST_CLEAN', 'RESTORE', or 'PURGE'.")
 
+@router.get("/ip-rules")
 @router.get("/ip-guard/list")
 def list_ip_rules(
     current_admin: User = Depends(get_current_admin),
@@ -1671,6 +1643,7 @@ def list_ip_rules(
         for r in rules
     ]
 
+@router.post("/ip-rules")
 @router.post("/ip-guard/rules")
 def add_ip_rule(
     req: IPRuleCreateRequest,
@@ -1713,6 +1686,7 @@ def add_ip_rule(
 
     return {"status": "SUCCESS", "message": f"IP '{ip}' added to {req.rule_type}.", "id": new_rule.id}
 
+@router.delete("/ip-rules/{rule_id}")
 @router.delete("/ip-guard/rules/{rule_id}")
 def delete_ip_rule(
     rule_id: int,
@@ -1841,6 +1815,38 @@ def get_user_activity_timeline(
             "result": e.result,
             "severity": e.severity,
             "details": (e.metadata_json or {}).get("details") or f"Operation: {e.event_type}"
+        }
+        for e in events
+    ]
+
+@router.get("/events")
+def list_security_events(
+    limit: int = 50,
+    severity: Optional[str] = None,
+    event_type: Optional[str] = None,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Returns real security events logged across the platform."""
+    query = db.query(SecurityEvent)
+    if severity:
+        query = query.filter(SecurityEvent.severity == severity.upper())
+    if event_type:
+        query = query.filter(SecurityEvent.event_type == event_type.upper())
+    
+    events = query.order_by(SecurityEvent.timestamp.desc()).limit(limit).all()
+    return [
+        {
+            "id": e.id,
+            "timestamp": to_ist(e.timestamp),
+            "event_type": e.event_type,
+            "user_id": e.user_id,
+            "file_id": e.file_id,
+            "ip_address": e.ip_address,
+            "result": e.result,
+            "severity": e.severity,
+            "details": (e.metadata_json or {}).get("details") or f"Event: {e.event_type}",
+            "metadata": e.metadata_json or {}
         }
         for e in events
     ]

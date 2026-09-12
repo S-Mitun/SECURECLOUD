@@ -520,6 +520,7 @@ def get_file_versions(
         })
     return results
 
+@router.post("/{file_id}/versions")
 @router.post("/{file_id}/versions/upload")
 async def upload_new_version(
     file_id: str,
