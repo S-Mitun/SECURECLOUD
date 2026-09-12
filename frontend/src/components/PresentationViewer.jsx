@@ -42,11 +42,25 @@ export function PresentationViewer({ presentationData, data, filename, isFullscr
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [totalSlides, viewMode]);
 
-  if (!pData || totalSlides === 0) {
+  if (!pData || totalSlides === 0 || pData.format === 'PRESENTATION_ERROR') {
     return (
-      <div className="w-full h-96 flex flex-col items-center justify-center text-slate-400 font-mono text-xs bg-slate-950 rounded-xl border border-slate-800">
-        <FileText className="w-12 h-12 text-slate-600 mb-2" />
-        <div>No presentation slides available for rendering.</div>
+      <div className="w-full h-96 flex flex-col items-center justify-center p-6 text-slate-300 font-sans text-xs bg-slate-950 rounded-xl border border-slate-800 text-center">
+        <div className="w-14 h-14 bg-orange-950/70 border border-orange-500/40 rounded-2xl flex items-center justify-center text-orange-400 mb-3 shadow-lg">
+          <FileText className="w-7 h-7" />
+        </div>
+        <h4 className="font-bold text-white text-sm mb-1">{filename || 'Presentation File'}</h4>
+        <p className="text-xs text-slate-400 max-w-md mb-4 font-mono">
+          {pData?.error || 'Presentation archive secured in enclave. Full visual slide deck can be downloaded below for complete transitions and animations.'}
+        </p>
+        {downloadUrl && (
+          <a
+            href={downloadUrl}
+            download={filename}
+            className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-2 transition shadow-lg"
+          >
+            Download Presentation File
+          </a>
+        )}
       </div>
     );
   }
@@ -61,7 +75,7 @@ export function PresentationViewer({ presentationData, data, filename, isFullscr
         className="relative rounded-lg overflow-hidden shadow-2xl border border-slate-300 transition-all duration-150 my-auto select-text"
         style={{
           width: isSingle ? `${Math.min(1000, 920 * (zoom / 100))}px` : '100%',
-          maxWidth: isSingle ? '100%' : '900px',
+          maxWidth: '100%',
           aspectRatio: `${aspectRatio}`,
           backgroundColor: slideBg,
           color: isDarkBg ? '#ffffff' : '#0f172a'
@@ -71,10 +85,10 @@ export function PresentationViewer({ presentationData, data, filename, isFullscr
         {slide.elements && slide.elements.map((el, eIdx) => {
           const style = {
             position: 'absolute',
-            left: `${el.left}%`,
-            top: `${el.top}%`,
-            width: `${el.width}%`,
-            height: `${el.height}%`,
+            left: `${Math.max(0, Math.min(100, el.left))}%`,
+            top: `${Math.max(0, Math.min(100, el.top))}%`,
+            width: `${Math.max(5, Math.min(100, el.width))}%`,
+            height: `${Math.max(4, Math.min(100, el.height))}%`,
             backgroundColor: el.fill_color !== 'transparent' ? el.fill_color : undefined,
             borderColor: el.border_color !== 'transparent' ? el.border_color : undefined,
             borderWidth: el.border_color !== 'transparent' ? '1px' : '0',
@@ -86,8 +100,12 @@ export function PresentationViewer({ presentationData, data, filename, isFullscr
             return (
               <div
                 key={eIdx}
-                style={style}
-                className="overflow-hidden p-1 sm:p-2 flex flex-col justify-start leading-snug select-text"
+                style={{
+                  ...style,
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word'
+                }}
+                className="overflow-auto p-1 sm:p-2 flex flex-col justify-start leading-snug select-text"
               >
                 {el.paragraphs && el.paragraphs.map((p, pIdx) => {
                   const levelIndent = (p.level || 0) * 16;
